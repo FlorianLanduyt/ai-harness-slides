@@ -485,6 +485,127 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Toggle Switch */
+        .depth-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toggle-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--border);
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--accent-orange);
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
+
+        /* Simple/Deep Mode Visibility */
+        .simple-content { display: block; }
+        .deep-content { display: none; }
+
+        body.deep-mode .simple-content { display: none; }
+        body.deep-mode .deep-content { display: block; }
+
+        /* Deep mode code blocks */
+        .deep-code {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+
+        .deep-code pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #e2e8f0;
+        }
+
+        .deep-code .comment { color: #64748b; }
+        .deep-code .keyword { color: #f472b6; }
+        .deep-code .string { color: #a5f3fc; }
+        .deep-code .function { color: #fbbf24; }
+        .deep-code .type { color: #a78bfa; }
+
+        /* Technical annotations */
+        .tech-annotation {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(8,145,178,0.08);
+            border-left: 3px solid var(--accent-cyan);
+            border-radius: 0 8px 8px 0;
+            margin: 1rem 0;
+        }
+
+        .tech-annotation code {
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(0,0,0,0.1);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .implementation-note {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            padding: 1rem;
+            background: var(--bg-card);
+            border: 1px dashed var(--border);
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .implementation-note strong {
+            color: var(--accent-orange);
+        }
     </style>
 </head>
 <body>
@@ -498,6 +619,13 @@
             <a href="#permissions">Permissions</a>
             <a href="#context">Context</a>
             <a href="#patterns">Patterns</a>
+        </div>
+        <div class="depth-toggle">
+            <span class="toggle-label">Deep Mode</span>
+            <label class="toggle-switch">
+                <input type="checkbox" id="deepModeToggle" checked>
+                <span class="toggle-slider"></span>
+            </label>
         </div>
     </nav>
 
@@ -631,61 +759,85 @@
         <div class="slide-number">02</div>
         <div class="slide-content">
             <h2>The Core Query Loop</h2>
-            <p class="subtitle">The heart of the agentic system — a while(true) loop that continues until the model stops requesting tools.</p>
-            <div class="diagram">
-                <div class="flow-container">
-                    <div class="flow-step">
-                        <div class="step-icon">💬</div>
-                        <div class="step-content">
-                            <h3>User Message</h3>
-                            <p>Input enters the system</p>
-                        </div>
+            <p class="subtitle simple-content">The heart of the agentic system — a while(true) loop that continues until the model stops requesting tools.</p>
+            <p class="subtitle deep-content">An async generator implementing the ReAct pattern: Reason → Act → Observe → Repeat. Returns <code>AsyncGenerator&lt;Message&gt;</code> for streaming.</p>
+
+            <!-- Simple View -->
+            <div class="simple-content">
+                <div class="diagram">
+                    <div class="flow-container">
+                        <div class="flow-step"><div class="step-icon">💬</div><div class="step-content"><h3>User Message</h3><p>Input enters</p></div></div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step active"><div class="step-icon">🤖</div><div class="step-content"><h3>Model Call</h3><p>Stream chunks</p></div></div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step"><div class="step-icon">🔍</div><div class="step-content"><h3>Check Tools</h3><p>Detect tool_use</p></div></div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-step"><div class="step-icon">⚡</div><div class="step-content"><h3>Execute</h3><p>Run in parallel</p></div></div>
+                        <div class="flow-arrow loop">↺</div>
                     </div>
-                    <div class="flow-arrow">→</div>
-                    <div class="flow-step active">
-                        <div class="step-icon">🤖</div>
-                        <div class="step-content">
-                            <h3>Model Call</h3>
-                            <p>Stream response chunks</p>
-                        </div>
-                    </div>
-                    <div class="flow-arrow">→</div>
-                    <div class="flow-step">
-                        <div class="step-icon">🔍</div>
-                        <div class="step-content">
-                            <h3>Check Tools</h3>
-                            <p>Detect tool_use blocks</p>
-                        </div>
-                    </div>
-                    <div class="flow-arrow">→</div>
-                    <div class="flow-step">
-                        <div class="step-icon">⚡</div>
-                        <div class="step-content">
-                            <h3>Execute</h3>
-                            <p>Run tools in parallel</p>
-                        </div>
-                    </div>
-                    <div class="flow-arrow loop">↺</div>
                 </div>
             </div>
-            <div class="code-block">
-                <pre><code>while (true) {
-  messagesForQuery = await applyAutoCompact(messages)
 
-  for await (const message of callModel(messagesForQuery)) {
-    yield message  // Stream to UI
-    if (hasToolUse(message)) needsFollowUp = true
-  }
+            <!-- Deep View -->
+            <div class="deep-content">
+                <div class="deep-code">
+                    <pre><span class="keyword">async function*</span> <span class="function">query</span>(
+  messages: <span class="type">Message[]</span>,
+  options: <span class="type">QueryOptions</span>
+): <span class="type">AsyncGenerator&lt;Message, QueryResult&gt;</span> {
 
-  if (needsFollowUp) {
-    for await (const result of runTools(toolUseBlocks)) {
-      messages.push(result)
+  <span class="keyword">while</span> (<span class="keyword">true</span>) {
+    <span class="comment">// 1. Context compaction if approaching token limit (~180K threshold)</span>
+    <span class="keyword">const</span> messagesForQuery = <span class="keyword">await</span> applyAutoCompact(messages, {
+      threshold: MAX_CONTEXT_TOKENS * 0.9,
+      compactionAgent: summaryModel  <span class="comment">// Separate LLM call for summarization</span>
+    })
+
+    <span class="comment">// 2. Stream response via async iteration (backpressure-aware)</span>
+    <span class="keyword">let</span> toolUseBlocks: <span class="type">ToolUseBlock[]</span> = []
+    <span class="keyword">for await</span> (<span class="keyword">const</span> chunk <span class="keyword">of</span> streamModel(messagesForQuery, tools)) {
+      <span class="keyword">yield</span> chunk  <span class="comment">// Yield each SSE chunk to UI immediately</span>
+
+      <span class="keyword">if</span> (chunk.type === <span class="string">'content_block_start'</span> && chunk.content_block.type === <span class="string">'tool_use'</span>) {
+        toolUseBlocks.push(chunk.content_block)
+      }
     }
-    continue  // Loop back
-  }
 
-  return { reason: 'end_turn' }  // Done!
-}</code></pre>
+    <span class="comment">// 3. No tools requested → conversation turn complete</span>
+    <span class="keyword">if</span> (toolUseBlocks.length === 0) {
+      <span class="keyword">return</span> { reason: <span class="string">'end_turn'</span>, tokenUsage }
+    }
+
+    <span class="comment">// 4. Execute tools in parallel with permission checks</span>
+    <span class="keyword">const</span> results = <span class="keyword">await</span> Promise.all(
+      toolUseBlocks.map(<span class="keyword">async</span> (block) => {
+        <span class="keyword">const</span> tool = toolRegistry.get(block.name)
+        <span class="keyword">const</span> permitted = <span class="keyword">await</span> checkPermission(tool, block.input)
+        <span class="keyword">if</span> (!permitted) <span class="keyword">return</span> { type: <span class="string">'tool_result'</span>, error: <span class="string">'Permission denied'</span> }
+        <span class="keyword">return await</span> tool.call(block.input, context)
+      })
+    )
+
+    <span class="comment">// 5. Append results and loop back to model</span>
+    messages.push(...results)
+  }
+}</pre>
+                </div>
+
+                <div class="tech-annotation">
+                    <strong>Key Implementation Details:</strong>
+                    <ul style="margin:0; padding-left:1.5rem; color: var(--text-secondary);">
+                        <li><code>AsyncGenerator</code> enables backpressure — consumer controls iteration pace</li>
+                        <li><code>yield</code> streams each chunk; <code>return</code> provides final metadata</li>
+                        <li>Tool execution is parallel via <code>Promise.all</code> but respects dependency ordering</li>
+                        <li>Compaction uses a separate model call to summarize old messages</li>
+                    </ul>
+                </div>
+
+                <div class="implementation-note">
+                    <strong>File:</strong> <code>src/core/query.ts</code> — The entire agentic behavior is ~200 lines.
+                    Recovery logic handles <code>max_output_tokens</code>, <code>rate_limit</code>, and <code>prompt_too_long</code> errors with exponential backoff.
+                </div>
             </div>
         </div>
     </section>
@@ -695,45 +847,82 @@
         <div class="slide-number">03</div>
         <div class="slide-content">
             <h2>Tool System Architecture</h2>
-            <p class="subtitle">Each tool is a self-contained module with schema validation, permission checks, and rendering capabilities.</p>
-            <div class="tools-grid">
-                <div class="tool-card">
-                    <div class="tool-icon">📁</div>
-                    <h3>File Operations</h3>
-                    <p>FileReadTool, FileEditTool, FileWriteTool</p>
+            <p class="subtitle simple-content">Each tool is a self-contained module with schema validation, permission checks, and rendering capabilities.</p>
+            <p class="subtitle deep-content">Tools implement the <code>Tool&lt;TInput, TOutput&gt;</code> interface. Input validated via Zod schemas, output wrapped in <code>ToolResult</code> for model consumption.</p>
+
+            <!-- Simple View -->
+            <div class="simple-content">
+                <div class="tools-grid">
+                    <div class="tool-card"><div class="tool-icon">📁</div><h3>File Operations</h3><p>FileReadTool, FileEditTool, FileWriteTool</p></div>
+                    <div class="tool-card"><div class="tool-icon">💻</div><h3>Shell</h3><p>BashTool, PowerShellTool</p></div>
+                    <div class="tool-card"><div class="tool-icon">🔎</div><h3>Search</h3><p>GlobTool, GrepTool, WebSearchTool</p></div>
+                    <div class="tool-card"><div class="tool-icon">🤖</div><h3>Agents</h3><p>AgentTool, TaskCreateTool</p></div>
+                    <div class="tool-card"><div class="tool-icon">🌐</div><h3>External</h3><p>WebFetchTool, MCP Tools</p></div>
+                    <div class="tool-card"><div class="tool-icon">🔧</div><h3>Custom</h3><p>Skills, Plugins, Extensions</p></div>
                 </div>
-                <div class="tool-card">
-                    <div class="tool-icon">💻</div>
-                    <h3>Shell</h3>
-                    <p>BashTool, PowerShellTool</p>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-icon">🔎</div>
-                    <h3>Search</h3>
-                    <p>GlobTool, GrepTool, WebSearchTool</p>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-icon">🤖</div>
-                    <h3>Agents</h3>
-                    <p>AgentTool, TaskCreateTool</p>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-icon">🌐</div>
-                    <h3>External</h3>
-                    <p>WebFetchTool, MCP Tools</p>
-                </div>
-                <div class="tool-card">
-                    <div class="tool-icon">🔧</div>
-                    <h3>Custom</h3>
-                    <p>Skills, Plugins, Extensions</p>
+                <div class="tool-flow">
+                    <div class="flow-item">Parse Input<span>Zod Schema</span></div>
+                    <div class="flow-item">Validate<span>validateInput()</span></div>
+                    <div class="flow-item">Permission<span>checkPermissions()</span></div>
+                    <div class="flow-item">Execute<span>call()</span></div>
+                    <div class="flow-item">Format<span>mapToResult()</span></div>
                 </div>
             </div>
-            <div class="tool-flow">
-                <div class="flow-item">Parse Input<span>Zod Schema</span></div>
-                <div class="flow-item">Validate<span>validateInput()</span></div>
-                <div class="flow-item">Permission<span>checkPermissions()</span></div>
-                <div class="flow-item">Execute<span>call()</span></div>
-                <div class="flow-item">Format<span>mapToResult()</span></div>
+
+            <!-- Deep View -->
+            <div class="deep-content">
+                <div class="deep-code">
+                    <pre><span class="keyword">interface</span> <span class="type">Tool</span>&lt;<span class="type">TInput</span>, <span class="type">TOutput</span>&gt; {
+  <span class="comment">// Identity & Discovery</span>
+  name: <span class="type">string</span>                           <span class="comment">// Unique identifier for tool_use blocks</span>
+  description: <span class="type">string</span>                    <span class="comment">// Shown to model in system prompt</span>
+
+  <span class="comment">// Input Validation (Zod schema → JSON Schema for API)</span>
+  inputSchema: <span class="type">ZodSchema&lt;TInput&gt;</span>
+
+  <span class="comment">// Permission & Execution</span>
+  <span class="function">isReadOnly</span>(): <span class="type">boolean</span>                  <span class="comment">// false = requires write permission</span>
+  <span class="function">needsPermission</span>(input: <span class="type">TInput</span>): <span class="type">boolean</span>  <span class="comment">// Dynamic permission check</span>
+
+  <span class="function">call</span>(
+    input: <span class="type">TInput</span>,
+    context: <span class="type">ToolUseContext</span>,            <span class="comment">// Abort signal, progress callback, env</span>
+    canUseTool: <span class="type">CanUseTool</span>,              <span class="comment">// Nested tool permission checker</span>
+    onProgress?: <span class="type">(p: Progress) => void</span>
+  ): <span class="type">Promise&lt;TOutput&gt;</span>
+
+  <span class="comment">// Output Transformation</span>
+  <span class="function">mapToResult</span>(output: <span class="type">TOutput</span>): <span class="type">ToolResult</span>  <span class="comment">// Format for model consumption</span>
+
+  <span class="comment">// UI Rendering (React component)</span>
+  <span class="function">renderToolUse</span>(input: <span class="type">TInput</span>): <span class="type">ReactNode</span>
+  <span class="function">renderToolResult</span>(result: <span class="type">TOutput</span>): <span class="type">ReactNode</span>
+}</pre>
+                </div>
+
+                <div class="contracts-grid" style="margin-top:1.5rem;">
+                    <div class="contract">
+                        <code>ToolUseContext</code>
+                        <span>abortSignal, readState, getEnv, options, workingDir</span>
+                    </div>
+                    <div class="contract">
+                        <code>ToolResult</code>
+                        <span>{ type, content: TextBlock | ImageBlock, is_error? }</span>
+                    </div>
+                    <div class="contract">
+                        <code>inputSchema</code>
+                        <span>Zod → JSON Schema via zod-to-json-schema at build time</span>
+                    </div>
+                    <div class="contract">
+                        <code>MCP Tools</code>
+                        <span>Dynamic registration via Model Context Protocol servers</span>
+                    </div>
+                </div>
+
+                <div class="implementation-note">
+                    <strong>Tool Registration:</strong> Tools are collected in <code>getTools()</code> which filters by feature flags and permission mode.
+                    MCP tools are dynamically fetched from external servers and wrapped in the same interface.
+                </div>
             </div>
         </div>
     </section>
@@ -743,35 +932,67 @@
         <div class="slide-number">04</div>
         <div class="slide-content">
             <h2>Permission System</h2>
-            <p class="subtitle">Defense in depth — multiple layers ensure safety with configurable permission modes.</p>
-            <div class="permissions-grid">
-                <div class="permission-card default">
-                    <div class="permission-header">
-                        <span class="mode-badge">default</span>
-                        <h3>Ask Mode</h3>
-                    </div>
-                    <p>Prompts user for dangerous operations. Safe default for most users.</p>
+            <p class="subtitle simple-content">Defense in depth — multiple layers ensure safety with configurable permission modes.</p>
+            <p class="subtitle deep-content">Multi-layer permission checking: <code>PermissionMode</code> → <code>tool.needsPermission()</code> → <code>canUseTool()</code> hook → user confirmation UI.</p>
+
+            <!-- Simple View -->
+            <div class="simple-content">
+                <div class="permissions-grid">
+                    <div class="permission-card default"><div class="permission-header"><span class="mode-badge">default</span><h3>Ask Mode</h3></div><p>Prompts user for dangerous operations.</p></div>
+                    <div class="permission-card auto"><div class="permission-header"><span class="mode-badge">auto</span><h3>YOLO Mode</h3></div><p>Auto-approve with ML classifier.</p></div>
+                    <div class="permission-card plan"><div class="permission-header"><span class="mode-badge">plan</span><h3>Read-Only</h3></div><p>No writes allowed.</p></div>
+                    <div class="permission-card bypass"><div class="permission-header"><span class="mode-badge">bypass</span><h3>Trust All</h3></div><p>Allow everything.</p></div>
                 </div>
-                <div class="permission-card auto">
-                    <div class="permission-header">
-                        <span class="mode-badge">auto</span>
-                        <h3>YOLO Mode</h3>
-                    </div>
-                    <p>Auto-approve with ML classifier. For experienced users who trust the system.</p>
+            </div>
+
+            <!-- Deep View -->
+            <div class="deep-content">
+                <div class="deep-code">
+                    <pre><span class="keyword">type</span> <span class="type">PermissionMode</span> = <span class="string">'default'</span> | <span class="string">'plan'</span> | <span class="string">'auto'</span> | <span class="string">'bypass'</span>
+
+<span class="keyword">type</span> <span class="type">CanUseTool</span> = (
+  tool: <span class="type">Tool</span>,
+  input: <span class="type">unknown</span>,
+  context: <span class="type">ToolUseContext</span>
+) => <span class="type">Promise&lt;'allow' | 'deny' | 'ask'&gt;</span>
+
+<span class="comment">// Permission check flow</span>
+<span class="keyword">async function</span> <span class="function">checkPermission</span>(tool, input, mode): <span class="type">Promise&lt;boolean&gt;</span> {
+  <span class="comment">// Layer 1: Mode-level gates</span>
+  <span class="keyword">if</span> (mode === <span class="string">'bypass'</span>) <span class="keyword">return true</span>
+  <span class="keyword">if</span> (mode === <span class="string">'plan'</span> && !tool.isReadOnly()) <span class="keyword">return false</span>
+
+  <span class="comment">// Layer 2: Tool-level permission check</span>
+  <span class="keyword">if</span> (!tool.needsPermission(input)) <span class="keyword">return true</span>
+
+  <span class="comment">// Layer 3: Auto-mode ML classifier (trained on user patterns)</span>
+  <span class="keyword">if</span> (mode === <span class="string">'auto'</span>) {
+    <span class="keyword">const</span> prediction = <span class="keyword">await</span> classifier.predict(tool, input)
+    <span class="keyword">if</span> (prediction.confidence > THRESHOLD) <span class="keyword">return</span> prediction.allow
+  }
+
+  <span class="comment">// Layer 4: User confirmation UI (blocks until response)</span>
+  <span class="keyword">return await</span> showPermissionDialog(tool, input)
+}</pre>
                 </div>
-                <div class="permission-card plan">
-                    <div class="permission-header">
-                        <span class="mode-badge">plan</span>
-                        <h3>Read-Only</h3>
+
+                <div class="contracts-grid" style="margin-top:1.5rem;">
+                    <div class="contract">
+                        <code>isReadOnly()</code>
+                        <span>FileReadTool: true, BashTool: false, GrepTool: true</span>
                     </div>
-                    <p>No writes allowed. Perfect for exploration and planning phases.</p>
-                </div>
-                <div class="permission-card bypass">
-                    <div class="permission-header">
-                        <span class="mode-badge">bypass</span>
-                        <h3>Trust All</h3>
+                    <div class="contract">
+                        <code>needsPermission()</code>
+                        <span>Dynamic check — BashTool checks for rm, sudo, etc.</span>
                     </div>
-                    <p>Allow everything. Only for fully trusted environments.</p>
+                    <div class="contract">
+                        <code>allowlist</code>
+                        <span>User-configured patterns: "allow npm test", "deny rm -rf"</span>
+                    </div>
+                    <div class="contract">
+                        <code>session cache</code>
+                        <span>Once approved, similar operations auto-allowed for session</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -782,37 +1003,66 @@
         <div class="slide-number">05</div>
         <div class="slide-content">
             <h2>Context Management</h2>
-            <p class="subtitle">Managing the ~200K token context window with auto-compaction and smart truncation.</p>
-            <div class="context-layers">
-                <div class="layer system-prompt">
-                    <span class="layer-label">System Prompt</span>
-                    <span class="layer-desc">Instructions & capabilities</span>
+            <p class="subtitle simple-content">Managing the ~200K token context window with auto-compaction and smart truncation.</p>
+            <p class="subtitle deep-content">Token budget management via <code>tiktoken</code>. Auto-compaction at 90% capacity. Microcompaction for large tool outputs via temp file references.</p>
+
+            <!-- Simple View -->
+            <div class="simple-content">
+                <div class="context-layers">
+                    <div class="layer system-prompt"><span class="layer-label">System Prompt</span><span class="layer-desc">Instructions & capabilities</span></div>
+                    <div class="layer user-context"><span class="layer-label">User Context</span><span class="layer-desc">CLAUDE.md, date, environment</span></div>
+                    <div class="layer system-context"><span class="layer-label">System Context</span><span class="layer-desc">Git status, working directory</span></div>
+                    <div class="layer conversation"><span class="layer-label">Conversation History</span><span class="layer-desc">Compacted when needed</span></div>
+                    <div class="layer tool-results"><span class="layer-label">Tool Results</span><span class="layer-desc">Truncated if too large</span></div>
                 </div>
-                <div class="layer user-context">
-                    <span class="layer-label">User Context</span>
-                    <span class="layer-desc">CLAUDE.md, date, environment</span>
-                </div>
-                <div class="layer system-context">
-                    <span class="layer-label">System Context</span>
-                    <span class="layer-desc">Git status, working directory</span>
-                </div>
-                <div class="layer conversation">
-                    <span class="layer-label">Conversation History</span>
-                    <span class="layer-desc">Compacted when needed</span>
-                </div>
-                <div class="layer tool-results">
-                    <span class="layer-label">Tool Results</span>
-                    <span class="layer-desc">Truncated if too large</span>
+                <div class="compaction-info">
+                    <div class="info-card"><h4>Auto-Compaction</h4><p>When tokens exceed ~180K, old messages are summarized</p></div>
+                    <div class="info-card"><h4>Microcompaction</h4><p>Large outputs saved to temp files with truncated preview</p></div>
                 </div>
             </div>
-            <div class="compaction-info">
-                <div class="info-card">
-                    <h4>Auto-Compaction</h4>
-                    <p>When tokens exceed ~180K, old messages are summarized by a compaction agent</p>
+
+            <!-- Deep View -->
+            <div class="deep-content">
+                <div class="deep-code">
+                    <pre><span class="keyword">const</span> MAX_TOKENS = 200_000
+<span class="keyword">const</span> COMPACT_THRESHOLD = 0.9 * MAX_TOKENS  <span class="comment">// ~180K</span>
+<span class="keyword">const</span> MICROCOMPACT_THRESHOLD = 50_000       <span class="comment">// Per-message limit</span>
+
+<span class="keyword">async function</span> <span class="function">applyAutoCompact</span>(messages: <span class="type">Message[]</span>): <span class="type">Message[]</span> {
+  <span class="keyword">const</span> tokenCount = countTokens(messages)  <span class="comment">// via tiktoken</span>
+
+  <span class="keyword">if</span> (tokenCount < COMPACT_THRESHOLD) <span class="keyword">return</span> messages
+
+  <span class="comment">// Find split point: keep recent, summarize old</span>
+  <span class="keyword">const</span> splitIdx = findCompactionPoint(messages, {
+    preserveLastN: 10,           <span class="comment">// Always keep last 10 messages</span>
+    preserveToolResults: <span class="keyword">true</span>,   <span class="comment">// Keep pending tool results</span>
+  })
+
+  <span class="comment">// Summarize old messages via dedicated LLM call</span>
+  <span class="keyword">const</span> summary = <span class="keyword">await</span> compactionAgent.summarize(messages.slice(0, splitIdx))
+
+  <span class="keyword">return</span> [
+    { role: <span class="string">'system'</span>, content: <span class="string">`[Compacted: ${summary}]`</span> },
+    ...messages.slice(splitIdx)
+  ]
+}
+
+<span class="comment">// Microcompaction: large tool outputs → file reference</span>
+<span class="keyword">function</span> <span class="function">microcompact</span>(result: <span class="type">ToolResult</span>): <span class="type">ToolResult</span> {
+  <span class="keyword">if</span> (countTokens(result) < MICROCOMPACT_THRESHOLD) <span class="keyword">return</span> result
+
+  <span class="keyword">const</span> tempPath = writeTempFile(result.content)
+  <span class="keyword">return</span> {
+    content: truncate(result.content, 1000) +
+             <span class="string">`\n\n[Full output: ${tempPath}]`</span>
+  }
+}</pre>
                 </div>
-                <div class="info-card">
-                    <h4>Microcompaction</h4>
-                    <p>Large tool outputs are saved to temp files, with truncated preview in context</p>
+
+                <div class="implementation-note">
+                    <strong>Token Counting:</strong> Uses <code>tiktoken</code> (OpenAI's tokenizer) with cl100k_base encoding.
+                    System prompt ~8K tokens, leaving ~192K for conversation. Images counted as fixed token cost per dimension.
                 </div>
             </div>
         </div>
@@ -823,31 +1073,92 @@
         <div class="slide-number">06</div>
         <div class="slide-content">
             <h2>Key Architectural Patterns</h2>
-            <p class="subtitle">Battle-tested patterns from years of production AI system iteration.</p>
-            <div class="patterns-grid">
-                <div class="pattern-card">
-                    <div class="pattern-icon">🌊</div>
-                    <h3>Generator-Based Streaming</h3>
-                    <p>Async generators yield messages as they arrive. Consumer controls iteration with clean cancellation.</p>
-                    <code>async function* query(): AsyncGenerator&lt;Message&gt;</code>
+            <p class="subtitle simple-content">Battle-tested patterns from years of production AI system iteration.</p>
+            <p class="subtitle deep-content">Production patterns for async control flow, error recovery, and extensibility in long-running agent processes.</p>
+
+            <!-- Simple View -->
+            <div class="simple-content">
+                <div class="patterns-grid">
+                    <div class="pattern-card"><div class="pattern-icon">🌊</div><h3>Generator-Based Streaming</h3><p>Async generators yield messages as they arrive.</p><code>async function* query(): AsyncGenerator&lt;Message&gt;</code></div>
+                    <div class="pattern-card"><div class="pattern-icon">🧵</div><h3>Context Threading</h3><p>ToolUseContext carries state through call stack.</p><code>tool.call(input, context, canUseTool)</code></div>
+                    <div class="pattern-card"><div class="pattern-icon">🔄</div><h3>Recovery Patterns</h3><p>Multi-level recovery for API errors.</p><code>for (const strategy of recoveryStrategies)</code></div>
+                    <div class="pattern-card"><div class="pattern-icon">🎛️</div><h3>Feature Flags</h3><p>Compile-time elimination of unused features.</p><code>feature('FLAG') ? require('./Tool') : null</code></div>
                 </div>
-                <div class="pattern-card">
-                    <div class="pattern-icon">🧵</div>
-                    <h3>Context Threading</h3>
-                    <p>ToolUseContext carries state accessors, abort handling, and options through the entire call stack.</p>
-                    <code>tool.call(input, context, canUseTool, onProgress)</code>
-                </div>
-                <div class="pattern-card">
-                    <div class="pattern-icon">🔄</div>
-                    <h3>Recovery Patterns</h3>
-                    <p>Multi-level recovery for max_output_tokens, prompt_too_long, and rate_limit errors.</p>
-                    <code>for (const strategy of recoveryStrategies)</code>
-                </div>
-                <div class="pattern-card">
-                    <div class="pattern-icon">🎛️</div>
-                    <h3>Feature Flags</h3>
-                    <p>Compile-time elimination of unused features. Gradual rollout with zero runtime cost.</p>
-                    <code>const Tool = feature('FLAG') ? require('./Tool') : null</code>
+            </div>
+
+            <!-- Deep View -->
+            <div class="deep-content">
+                <div class="patterns-grid">
+                    <div class="pattern-card">
+                        <h3>🌊 Generator-Based Streaming</h3>
+                        <div class="deep-code" style="margin:1rem 0;">
+                            <pre><span class="comment">// Consumer controls backpressure</span>
+<span class="keyword">for await</span> (<span class="keyword">const</span> msg <span class="keyword">of</span> query(messages)) {
+  <span class="keyword">if</span> (aborted) <span class="keyword">break</span>  <span class="comment">// Clean cancellation</span>
+  render(msg)
+}
+
+<span class="comment">// vs callback hell:</span>
+query(messages, {
+  onChunk: (c) => {},
+  onDone: () => {},
+  onError: (e) => {}
+})</pre>
+                        </div>
+                        <span style="font-size:0.85rem;color:var(--text-secondary);">Backpressure-aware. Iterator controls pace. Cancellation via break.</span>
+                    </div>
+                    <div class="pattern-card">
+                        <h3>🧵 Context Threading</h3>
+                        <div class="deep-code" style="margin:1rem 0;">
+                            <pre><span class="keyword">interface</span> <span class="type">ToolUseContext</span> {
+  abortSignal: <span class="type">AbortSignal</span>
+  readState: <span class="type">() => State</span>
+  getEnv: <span class="type">(key: string) => string</span>
+  workingDir: <span class="type">string</span>
+  options: <span class="type">QueryOptions</span>
+}
+
+<span class="comment">// Passed through entire call stack</span>
+<span class="comment">// No global state, fully testable</span></pre>
+                        </div>
+                        <span style="font-size:0.85rem;color:var(--text-secondary);">Dependency injection pattern. Enables testing without mocks.</span>
+                    </div>
+                    <div class="pattern-card">
+                        <h3>🔄 Error Recovery</h3>
+                        <div class="deep-code" style="margin:1rem 0;">
+                            <pre><span class="keyword">const</span> strategies = [
+  { error: <span class="string">'rate_limit'</span>,
+    action: exponentialBackoff },
+  { error: <span class="string">'max_output_tokens'</span>,
+    action: continueGeneration },
+  { error: <span class="string">'prompt_too_long'</span>,
+    action: forceCompaction },
+]
+
+<span class="keyword">for</span> (<span class="keyword">const</span> s <span class="keyword">of</span> strategies) {
+  <span class="keyword">if</span> (s.error === err.type)
+    <span class="keyword">return</span> s.action(err)
+}</pre>
+                        </div>
+                        <span style="font-size:0.85rem;color:var(--text-secondary);">Chain of responsibility. Each error type has specific recovery.</span>
+                    </div>
+                    <div class="pattern-card">
+                        <h3>🔌 MCP Integration</h3>
+                        <div class="deep-code" style="margin:1rem 0;">
+                            <pre><span class="comment">// Model Context Protocol</span>
+<span class="keyword">const</span> mcpTools = <span class="keyword">await</span> mcpClient
+  .connect(<span class="string">'stdio://server'</span>)
+  .listTools()
+
+<span class="comment">// Wrap in Tool interface</span>
+mcpTools.map(t => ({
+  name: t.name,
+  call: (input) =>
+    mcpClient.callTool(t.name, input)
+}))</pre>
+                        </div>
+                        <span style="font-size:0.85rem;color:var(--text-secondary);">External tools via JSON-RPC. Same interface as built-in tools.</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1215,5 +1526,24 @@
             .flow-item::after { display: none; }
         }
     </style>
+
+    <script>
+        // Deep Mode Toggle
+        const toggle = document.getElementById('deepModeToggle');
+        const body = document.body;
+
+        // Initialize based on toggle state (checked = deep mode)
+        if (toggle.checked) {
+            body.classList.add('deep-mode');
+        }
+
+        toggle.addEventListener('change', () => {
+            if (toggle.checked) {
+                body.classList.add('deep-mode');
+            } else {
+                body.classList.remove('deep-mode');
+            }
+        });
+    </script>
 </body>
 </html>
