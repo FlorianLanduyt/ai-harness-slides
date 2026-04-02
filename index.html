@@ -112,6 +112,7 @@
             justify-content: center;
             position: relative;
             border-bottom: 1px solid var(--border);
+            overflow-x: hidden;
         }
         
         .slide-number {
@@ -129,6 +130,7 @@
             max-width: 1200px;
             margin: 0 auto;
             width: 100%;
+            overflow-x: hidden;
         }
         
         h1 {
@@ -952,12 +954,14 @@
             margin: 1.5rem 0;
             overflow-x: auto;
             border: 1px solid var(--border);
+            max-width: 100%;
         }
 
         .deep-code pre {
             margin: 0;
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.85rem;
+            overflow-x: auto;
             line-height: 1.6;
             color: var(--code-text);
         }
