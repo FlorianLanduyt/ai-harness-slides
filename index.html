@@ -704,8 +704,15 @@
         <div class="slide-number">00</div>
         <div class="slide-content">
             <h1>Understanding the<br><span class="highlight">AI Agent Harness</span></h1>
-            <p class="subtitle">A comprehensive deep dive into Claude Code's production-grade architecture — the orchestration layer that powers intelligent AI agents.</p>
-            <div class="hero-grid">
+
+            <!-- Simple subtitle -->
+            <p class="subtitle simple-content">A comprehensive deep dive into Claude Code's production-grade architecture — the orchestration layer that powers intelligent AI agents.</p>
+
+            <!-- Technical subtitle -->
+            <p class="subtitle deep-content">Reverse-engineering Claude Code's runtime: <code>async function* query()</code> → ReAct loop, tool dispatch via <code>Tool&lt;I,O&gt;</code> interface, context compaction at 90% of 200K tokens.</p>
+
+            <!-- Simple stats -->
+            <div class="hero-grid simple-content">
                 <div class="hero-stat">
                     <div class="number">12</div>
                     <div class="label">Core Components</div>
@@ -725,6 +732,38 @@
                 <div class="hero-stat">
                     <div class="number">∞</div>
                     <div class="label">Extensibility</div>
+                </div>
+            </div>
+
+            <!-- Technical stats -->
+            <div class="hero-grid deep-content">
+                <div class="hero-stat">
+                    <div class="number" style="font-size:1.8rem;">query.ts</div>
+                    <div class="label">~200 LOC agentic loop</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="number" style="font-size:1.8rem;">Tool&lt;I,O&gt;</div>
+                    <div class="label">Zod → JSON Schema</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="number" style="font-size:1.8rem;">tiktoken</div>
+                    <div class="label">cl100k_base encoding</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="number" style="font-size:1.8rem;">MCP</div>
+                    <div class="label">JSON-RPC tool servers</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="number" style="font-size:1.8rem;">SSE</div>
+                    <div class="label">Streaming via generators</div>
+                </div>
+            </div>
+
+            <!-- Deep mode: quick architecture overview -->
+            <div class="deep-content" style="margin-top: 2rem;">
+                <div class="tech-annotation">
+                    <strong>Stack:</strong> TypeScript + Ink (React for CLI) + Zod schemas + tiktoken + Anthropic SDK.
+                    Entry: <code>cli.tsx</code> → <code>query.ts</code> → <code>Tool.call()</code> → loop until <code>stop_reason: 'end_turn'</code>
                 </div>
             </div>
         </div>
