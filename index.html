@@ -305,6 +305,186 @@
                 max-width: 100%;
             }
         }
+
+        /* Technical Diagram */
+        .technical-diagram {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 2rem 0;
+            padding: 2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .diagram-layer {
+            width: 100%;
+            max-width: 700px;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .user-layer {
+            background: linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(124,58,237,0.05) 100%);
+            border: 1px solid rgba(124,58,237,0.3);
+        }
+
+        .harness-layer {
+            background: linear-gradient(135deg, rgba(232,93,42,0.1) 0%, rgba(232,93,42,0.05) 100%);
+            border: 2px solid var(--accent-orange);
+        }
+
+        .llm-layer {
+            background: linear-gradient(135deg, rgba(8,145,178,0.1) 0%, rgba(8,145,178,0.05) 100%);
+            border: 1px solid rgba(8,145,178,0.3);
+        }
+
+        .layer-name {
+            display: block;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .layer-components {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .harness-internals {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        .harness-module {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.75rem 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .harness-module code {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--accent-orange);
+            font-size: 0.85rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .harness-module span {
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+        }
+
+        .diagram-arrow {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            padding: 0.25rem 0;
+        }
+
+        /* Technical Details */
+        .technical-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .tech-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .tech-card h4 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .code-snippet {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 1rem;
+            overflow-x: auto;
+        }
+
+        .code-snippet pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            color: #e2e8f0;
+        }
+
+        /* Core Contracts */
+        .core-contracts {
+            margin-top: 2rem;
+        }
+
+        .core-contracts h4 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--accent-cyan);
+        }
+
+        .contracts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .contract {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .contract:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .contract code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--accent-orange);
+            background: rgba(232,93,42,0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+
+        .contract span {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .harness-internals {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .technical-details, .contracts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -357,56 +537,90 @@
         <div class="slide-number">01</div>
         <div class="slide-content">
             <h2>What is an AI Harness?</h2>
-            <p class="subtitle">The orchestration layer that transforms a raw LLM into a functional AI agent.</p>
-            <div class="comparison-grid">
-                <div class="comparison-card llm-only">
-                    <div class="comparison-icon">🧠</div>
-                    <h3>LLM Alone</h3>
-                    <p class="comparison-metaphor">"A brain in a jar"</p>
-                    <ul>
-                        <li>Can think and respond</li>
-                        <li>Generates text only</li>
-                        <li>No world interaction</li>
-                        <li>Stateless between calls</li>
-                    </ul>
+            <p class="subtitle">The runtime orchestration layer that wraps an LLM API, implementing the agentic loop, tool dispatch, and state management required for autonomous operation.</p>
+
+            <div class="technical-diagram">
+                <div class="diagram-layer user-layer">
+                    <span class="layer-name">User Interface</span>
+                    <div class="layer-components">
+                        <span>CLI / Web UI / IDE Extension</span>
+                    </div>
                 </div>
-                <div class="comparison-arrow">→</div>
-                <div class="comparison-card with-harness">
-                    <div class="comparison-icon">🤖</div>
-                    <h3>LLM + Harness</h3>
-                    <p class="comparison-metaphor">"A fully equipped agent"</p>
-                    <ul>
-                        <li>Reads files, runs commands</li>
-                        <li>Searches the web</li>
-                        <li>Manages tasks & state</li>
-                        <li>Takes real-world actions</li>
-                    </ul>
+                <div class="diagram-arrow">↓ stdin / HTTP ↑ streaming chunks</div>
+                <div class="diagram-layer harness-layer">
+                    <span class="layer-name">AI Harness</span>
+                    <div class="harness-internals">
+                        <div class="harness-module">
+                            <code>query()</code>
+                            <span>Agentic Loop</span>
+                        </div>
+                        <div class="harness-module">
+                            <code>Tool[]</code>
+                            <span>Tool Registry</span>
+                        </div>
+                        <div class="harness-module">
+                            <code>Message[]</code>
+                            <span>Context Buffer</span>
+                        </div>
+                        <div class="harness-module">
+                            <code>permissions</code>
+                            <span>Auth Layer</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="diagram-arrow">↓ messages + tools ↑ stream / tool_use</div>
+                <div class="diagram-layer llm-layer">
+                    <span class="layer-name">LLM API</span>
+                    <div class="layer-components">
+                        <span>Claude / GPT / Gemini (stateless completion endpoint)</span>
+                    </div>
                 </div>
             </div>
-            <div class="harness-responsibilities">
-                <div class="responsibility">
-                    <span class="resp-icon">🔧</span>
-                    <span class="resp-text">Tool Execution</span>
+
+            <div class="technical-details">
+                <div class="tech-card">
+                    <h4>Without Harness</h4>
+                    <div class="code-snippet">
+                        <pre>response = llm.complete(prompt)
+# Returns text. That's it.
+# No memory, no actions, no tools.</pre>
+                    </div>
                 </div>
-                <div class="responsibility">
-                    <span class="resp-icon">💬</span>
-                    <span class="resp-text">Conversation Management</span>
+                <div class="tech-card">
+                    <h4>With Harness</h4>
+                    <div class="code-snippet">
+                        <pre>while (true) {
+  response = llm.complete(messages, tools)
+  if (response.tool_use) {
+    result = executeTool(response.tool_use)
+    messages.push(result)
+    continue  // Loop back to LLM
+  }
+  return response  // Done
+}</pre>
+                    </div>
                 </div>
-                <div class="responsibility">
-                    <span class="resp-icon">🔒</span>
-                    <span class="resp-text">Permission Control</span>
-                </div>
-                <div class="responsibility">
-                    <span class="resp-icon">📊</span>
-                    <span class="resp-text">Context Window</span>
-                </div>
-                <div class="responsibility">
-                    <span class="resp-icon">⚡</span>
-                    <span class="resp-text">Streaming & UI</span>
-                </div>
-                <div class="responsibility">
-                    <span class="resp-icon">🔄</span>
-                    <span class="resp-text">Error Recovery</span>
+            </div>
+
+            <div class="core-contracts">
+                <h4>Core Contracts</h4>
+                <div class="contracts-grid">
+                    <div class="contract">
+                        <code>Tool</code>
+                        <span>inputSchema (Zod) → call() → ToolResult</span>
+                    </div>
+                    <div class="contract">
+                        <code>Message</code>
+                        <span>user | assistant | tool_use | tool_result</span>
+                    </div>
+                    <div class="contract">
+                        <code>Permission</code>
+                        <span>tool × action → allow | deny | ask</span>
+                    </div>
+                    <div class="contract">
+                        <code>Context</code>
+                        <span>system + messages → compact() when > threshold</span>
+                    </div>
                 </div>
             </div>
         </div>
