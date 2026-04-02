@@ -15,18 +15,37 @@
             --text-primary: #1e293b;
             --text-secondary: #64748b;
             --border: rgba(0,0,0,0.08);
+            --nav-bg: rgba(248,249,252,0.95);
+            --code-bg: #1e293b;
+            --code-text: #e2e8f0;
         }
-        
+
+        /* Dark Mode */
+        body.dark-mode {
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --accent-orange: #fb923c;
+            --accent-cyan: #22d3ee;
+            --accent-purple: #a78bfa;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: rgba(255,255,255,0.1);
+            --nav-bg: rgba(15,23,42,0.95);
+            --code-bg: #0f172a;
+            --code-text: #e2e8f0;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         html { scroll-behavior: smooth; }
-        
+
         body {
             font-family: 'Space Grotesk', sans-serif;
             background: var(--bg-dark);
             color: var(--text-primary);
             line-height: 1.6;
             overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         /* Navigation */
@@ -37,12 +56,19 @@
             right: 0;
             z-index: 100;
             padding: 1rem 2rem;
-            background: rgba(248,249,252,0.95);
+            background: var(--nav-bg);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--border);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .nav-toggles {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
         }
         
         .logo {
@@ -415,10 +441,11 @@
         }
 
         .code-snippet {
-            background: #1e293b;
+            background: var(--code-bg);
             border-radius: 8px;
             padding: 1rem;
             overflow-x: auto;
+            border: 1px solid var(--border);
         }
 
         .code-snippet pre {
@@ -426,7 +453,7 @@
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.8rem;
             line-height: 1.5;
-            color: #e2e8f0;
+            color: var(--code-text);
         }
 
         /* Core Contracts */
@@ -544,6 +571,42 @@
             transform: translateX(22px);
         }
 
+        /* Theme Toggle Button */
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg-card);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--accent-orange);
+            transform: scale(1.05);
+        }
+
+        .theme-toggle .sun-icon {
+            display: block;
+        }
+
+        .theme-toggle .moon-icon {
+            display: none;
+        }
+
+        body.dark-mode .theme-toggle .sun-icon {
+            display: none;
+        }
+
+        body.dark-mode .theme-toggle .moon-icon {
+            display: block;
+        }
+
         /* Simple/Deep Mode Visibility */
         .simple-content { display: block; }
         .deep-content { display: none; }
@@ -553,11 +616,12 @@
 
         /* Deep mode code blocks */
         .deep-code {
-            background: #1e293b;
+            background: var(--code-bg);
             border-radius: 12px;
             padding: 1.5rem;
             margin: 1.5rem 0;
             overflow-x: auto;
+            border: 1px solid var(--border);
         }
 
         .deep-code pre {
@@ -565,7 +629,7 @@
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.85rem;
             line-height: 1.6;
-            color: #e2e8f0;
+            color: var(--code-text);
         }
 
         .deep-code .comment { color: #64748b; }
@@ -620,12 +684,18 @@
             <a href="#context">Context</a>
             <a href="#patterns">Patterns</a>
         </div>
-        <div class="depth-toggle">
-            <span class="toggle-label">Deep Mode</span>
-            <label class="toggle-switch">
-                <input type="checkbox" id="deepModeToggle" checked>
-                <span class="toggle-slider"></span>
-            </label>
+        <div class="nav-toggles">
+            <div class="depth-toggle">
+                <span class="toggle-label">Deep Mode</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="deepModeToggle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+                <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+            </button>
         </div>
     </nav>
 
@@ -1528,22 +1598,44 @@ mcpTools.map(t => ({
     </style>
 
     <script>
-        // Deep Mode Toggle
-        const toggle = document.getElementById('deepModeToggle');
         const body = document.body;
 
-        // Initialize based on toggle state (checked = deep mode)
-        if (toggle.checked) {
+        // Deep Mode Toggle
+        const deepToggle = document.getElementById('deepModeToggle');
+
+        // Initialize deep mode based on toggle state (checked = deep mode)
+        if (deepToggle.checked) {
             body.classList.add('deep-mode');
         }
 
-        toggle.addEventListener('change', () => {
-            if (toggle.checked) {
-                body.classList.add('deep-mode');
-            } else {
-                body.classList.remove('deep-mode');
-            }
+        deepToggle.addEventListener('change', () => {
+            body.classList.toggle('deep-mode', deepToggle.checked);
+            localStorage.setItem('deepMode', deepToggle.checked);
         });
+
+        // Theme Toggle (Light/Dark)
+        const themeToggle = document.getElementById('themeToggle');
+
+        // Check for saved preference or system preference
+        const savedTheme = localStorage.getItem('darkMode');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (savedTheme === 'true' || (savedTheme === null && prefersDark)) {
+            body.classList.add('dark-mode');
+        }
+
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
+        });
+
+        // Restore deep mode preference
+        const savedDeepMode = localStorage.getItem('deepMode');
+        if (savedDeepMode !== null) {
+            const isDeep = savedDeepMode === 'true';
+            deepToggle.checked = isDeep;
+            body.classList.toggle('deep-mode', isDeep);
+        }
     </script>
 </body>
 </html>
