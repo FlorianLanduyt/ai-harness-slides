@@ -354,6 +354,92 @@
             background: rgba(255,255,255,0.1);
         }
 
+        /* SVG Architecture Diagram */
+        .svg-diagram-container {
+            margin: 2.5rem auto;
+            max-width: 850px;
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            overflow-x: auto;
+        }
+
+        .architecture-svg {
+            width: 100%;
+            height: auto;
+            min-height: 300px;
+        }
+
+        .architecture-svg text {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .architecture-svg .harness-modules rect {
+            transition: all 0.2s ease;
+        }
+
+        .architecture-svg .harness-modules rect:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+
+        /* ASCII Diagram Terminal */
+        .ascii-diagram-terminal {
+            margin: 2rem auto;
+            max-width: 900px;
+            background: var(--code-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        }
+
+        .ascii-body {
+            padding: 1rem 1.5rem;
+            overflow-x: auto;
+        }
+
+        .ascii-art {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            line-height: 1.4;
+            color: #94a3b8;
+            margin: 0;
+            white-space: pre;
+        }
+
+        .ascii-highlight {
+            color: #fb923c;
+            font-weight: bold;
+        }
+
+        .ascii-func {
+            color: #22d3ee;
+        }
+
+        .ascii-type {
+            color: #a78bfa;
+        }
+
+        .ascii-return {
+            color: #f472b6;
+        }
+
+        .ascii-api {
+            color: #4ade80;
+        }
+
+        @media (max-width: 768px) {
+            .ascii-art {
+                font-size: 0.5rem;
+            }
+            .svg-diagram-container {
+                padding: 0.75rem;
+            }
+        }
+
         /* Terminal Style for Deep Mode */
         .hero-terminal {
             margin: 2.5rem auto 0;
@@ -1089,6 +1175,80 @@
                         </ul>
                     </div>
                 </div>
+
+                <!-- SVG Architecture Diagram -->
+                <div class="svg-diagram-container">
+                    <svg viewBox="0 0 800 400" class="architecture-svg">
+                        <!-- User Input -->
+                        <g class="svg-node user-input">
+                            <rect x="320" y="20" width="160" height="50" rx="25" fill="var(--bg-card)" stroke="var(--accent-purple)" stroke-width="2"/>
+                            <text x="400" y="50" text-anchor="middle" fill="var(--text-primary)" font-size="14" font-weight="500">User Input</text>
+                        </g>
+
+                        <!-- Arrow down -->
+                        <path d="M400 70 L400 95" stroke="var(--text-secondary)" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                        <!-- Harness Box -->
+                        <g class="svg-node harness-box">
+                            <rect x="100" y="100" width="600" height="180" rx="16" fill="var(--bg-card)" stroke="var(--accent-orange)" stroke-width="3"/>
+                            <text x="400" y="130" text-anchor="middle" fill="var(--accent-orange)" font-size="16" font-weight="700">AI HARNESS</text>
+
+                            <!-- Internal modules -->
+                            <g class="harness-modules">
+                                <rect x="130" y="150" width="120" height="60" rx="8" fill="var(--bg-dark)" stroke="var(--border)" stroke-width="1"/>
+                                <text x="190" y="175" text-anchor="middle" fill="var(--accent-cyan)" font-size="12" font-weight="600">query()</text>
+                                <text x="190" y="195" text-anchor="middle" fill="var(--text-secondary)" font-size="10">Agentic Loop</text>
+
+                                <rect x="270" y="150" width="120" height="60" rx="8" fill="var(--bg-dark)" stroke="var(--border)" stroke-width="1"/>
+                                <text x="330" y="175" text-anchor="middle" fill="var(--accent-cyan)" font-size="12" font-weight="600">Tool[]</text>
+                                <text x="330" y="195" text-anchor="middle" fill="var(--text-secondary)" font-size="10">Registry</text>
+
+                                <rect x="410" y="150" width="120" height="60" rx="8" fill="var(--bg-dark)" stroke="var(--border)" stroke-width="1"/>
+                                <text x="470" y="175" text-anchor="middle" fill="var(--accent-cyan)" font-size="12" font-weight="600">Context</text>
+                                <text x="470" y="195" text-anchor="middle" fill="var(--text-secondary)" font-size="10">Manager</text>
+
+                                <rect x="550" y="150" width="120" height="60" rx="8" fill="var(--bg-dark)" stroke="var(--border)" stroke-width="1"/>
+                                <text x="610" y="175" text-anchor="middle" fill="var(--accent-cyan)" font-size="12" font-weight="600">Permissions</text>
+                                <text x="610" y="195" text-anchor="middle" fill="var(--text-secondary)" font-size="10">Auth Layer</text>
+                            </g>
+
+                            <!-- Loop arrow inside harness -->
+                            <path d="M250 220 Q400 250 550 220" fill="none" stroke="var(--accent-orange)" stroke-width="2" stroke-dasharray="5,5"/>
+                            <text x="400" y="260" text-anchor="middle" fill="var(--text-secondary)" font-size="11">tool_use → execute → result → loop</text>
+                        </g>
+
+                        <!-- Arrow down to LLM -->
+                        <path d="M350 280 L350 310" stroke="var(--text-secondary)" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        <text x="310" y="300" fill="var(--text-secondary)" font-size="10">messages</text>
+
+                        <!-- Arrow up from LLM -->
+                        <path d="M450 310 L450 280" stroke="var(--text-secondary)" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        <text x="470" y="300" fill="var(--text-secondary)" font-size="10">stream</text>
+
+                        <!-- LLM API -->
+                        <g class="svg-node llm-api">
+                            <rect x="280" y="315" width="240" height="50" rx="25" fill="var(--bg-card)" stroke="var(--accent-cyan)" stroke-width="2"/>
+                            <text x="400" y="345" text-anchor="middle" fill="var(--text-primary)" font-size="14" font-weight="500">LLM API (Claude / GPT)</text>
+                        </g>
+
+                        <!-- Tool execution branch -->
+                        <g class="tool-branch">
+                            <path d="M700 190 L750 190 L750 100 L700 100" fill="none" stroke="var(--accent-purple)" stroke-width="2" stroke-dasharray="4,4"/>
+                            <rect x="720" y="120" width="70" height="50" rx="8" fill="var(--bg-card)" stroke="var(--accent-purple)" stroke-width="1"/>
+                            <text x="755" y="140" text-anchor="middle" fill="var(--accent-purple)" font-size="10" font-weight="600">Tools</text>
+                            <text x="755" y="155" text-anchor="middle" fill="var(--text-secondary)" font-size="8">Files, Shell</text>
+                            <text x="755" y="165" text-anchor="middle" fill="var(--text-secondary)" font-size="8">Web, MCP</text>
+                        </g>
+
+                        <!-- Arrow marker definition -->
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="var(--text-secondary)"/>
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+
                 <div class="harness-responsibilities">
                     <div class="responsibility"><span class="resp-icon">🔧</span><span class="resp-text">Tool Execution</span></div>
                     <div class="responsibility"><span class="resp-icon">💬</span><span class="resp-text">Conversation Management</span></div>
@@ -1101,41 +1261,58 @@
 
             <!-- Deep View -->
             <div class="deep-content">
-                <div class="technical-diagram">
-                    <div class="diagram-layer user-layer">
-                        <span class="layer-name">User Interface</span>
-                        <div class="layer-components">
-                            <span>CLI / Web UI / IDE Extension</span>
-                        </div>
+                <!-- ASCII Architecture Diagram in Terminal -->
+                <div class="ascii-diagram-terminal">
+                    <div class="terminal-header">
+                        <span class="terminal-dot red"></span>
+                        <span class="terminal-dot yellow"></span>
+                        <span class="terminal-dot green"></span>
+                        <span class="terminal-title">harness-architecture.txt</span>
                     </div>
-                    <div class="diagram-arrow">↓ stdin / HTTP ↑ streaming chunks</div>
-                    <div class="diagram-layer harness-layer">
-                        <span class="layer-name">AI Harness</span>
-                        <div class="harness-internals">
-                            <div class="harness-module">
-                                <code>query()</code>
-                                <span>Agentic Loop</span>
-                            </div>
-                            <div class="harness-module">
-                                <code>Tool[]</code>
-                                <span>Tool Registry</span>
-                            </div>
-                            <div class="harness-module">
-                                <code>Message[]</code>
-                                <span>Context Buffer</span>
-                            </div>
-                            <div class="harness-module">
-                                <code>permissions</code>
-                                <span>Auth Layer</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="diagram-arrow">↓ messages + tools ↑ stream / tool_use</div>
-                    <div class="diagram-layer llm-layer">
-                        <span class="layer-name">LLM API</span>
-                        <div class="layer-components">
-                            <span>Claude / GPT / Gemini (stateless completion endpoint)</span>
-                        </div>
+                    <div class="terminal-body ascii-body">
+<pre class="ascii-art">
+                          ┌─────────────────┐
+                          │   User Input    │
+                          │  (CLI / HTTP)   │
+                          └────────┬────────┘
+                                   │ stdin / request
+                                   ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                              <span class="ascii-highlight">AI HARNESS</span>                                      │
+│                                                                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │  <span class="ascii-func">query()</span>   │  │  <span class="ascii-func">Tool[]</span>    │  │ <span class="ascii-func">Message[]</span>  │  │<span class="ascii-func">permissions</span> │         │
+│  │             │  │             │  │             │  │             │         │
+│  │ while(true) │  │ FileRead    │  │ System Msg  │  │ canUseTool  │         │
+│  │ { stream }  │  │ BashTool    │  │ User Msgs   │  │ allowList   │         │
+│  │             │  │ GrepTool    │  │ Tool Results│  │ askUser()   │         │
+│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘         │
+│         │                │                │                │                │
+│         └────────────────┴────────┬───────┴────────────────┘                │
+│                                   │                                         │
+│         ┌─────────────────────────┴─────────────────────────┐               │
+│         │                                                   │               │
+│         ▼                                                   │               │
+│  ┌─────────────┐    tool_use?    ┌─────────────┐           │               │
+│  │ <span class="ascii-type">callModel()</span> │ ──────────────▶ │<span class="ascii-type">executeTool()</span>│ ──────────┘               │
+│  │   stream    │      yes        │   result    │   push to messages        │
+│  └──────┬──────┘                 └─────────────┘                            │
+│         │ no (end_turn)                                                     │
+│         ▼                                                                   │
+│  ┌─────────────┐                                                            │
+│  │   <span class="ascii-return">return</span>    │                                                            │
+│  │  response   │                                                            │
+│  └─────────────┘                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+                                   │
+                   messages + tools│
+                                   ▼
+                          ┌─────────────────┐
+                          │    <span class="ascii-api">LLM API</span>      │
+                          │ Claude / GPT    │
+                          │   (stateless)   │
+                          └─────────────────┘
+</pre>
                     </div>
                 </div>
 
