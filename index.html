@@ -1,1285 +1,1705 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI Harness Architecture | Deep Dive</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        :root {
-            --bg-dark: #f8f9fc;
-            --bg-card: #ffffff;
-            --accent-orange: #e85d2a;
-            --accent-cyan: #0891b2;
-            --accent-purple: #7c3aed;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --border: rgba(0,0,0,0.08);
-            --nav-bg: rgba(248,249,252,0.95);
-            --code-bg: #1e293b;
-            --code-text: #e2e8f0;
-        }
+      :root {
+        --bg-dark: #f8f9fc;
+        --bg-card: #ffffff;
+        --accent-orange: #e85d2a;
+        --accent-cyan: #0891b2;
+        --accent-purple: #7c3aed;
+        --text-primary: #1e293b;
+        --text-secondary: #64748b;
+        --border: rgba(0, 0, 0, 0.08);
+        --nav-bg: rgba(248, 249, 252, 0.95);
+        --code-bg: #1e293b;
+        --code-text: #e2e8f0;
+      }
 
-        /* Dark Mode */
-        body.dark-mode {
-            --bg-dark: #0f172a;
-            --bg-card: #1e293b;
-            --accent-orange: #fb923c;
-            --accent-cyan: #22d3ee;
-            --accent-purple: #a78bfa;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --border: rgba(255,255,255,0.1);
-            --nav-bg: rgba(15,23,42,0.95);
-            --code-bg: #0f172a;
-            --code-text: #e2e8f0;
-        }
+      /* Dark Mode */
+      body.dark-mode {
+        --bg-dark: #0f172a;
+        --bg-card: #1e293b;
+        --accent-orange: #fb923c;
+        --accent-cyan: #22d3ee;
+        --accent-purple: #a78bfa;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --border: rgba(255, 255, 255, 0.1);
+        --nav-bg: rgba(15, 23, 42, 0.95);
+        --code-bg: #0f172a;
+        --code-text: #e2e8f0;
+      }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-        html { scroll-behavior: smooth; }
+      html {
+        scroll-behavior: smooth;
+      }
 
-        body {
-            font-family: 'Space Grotesk', sans-serif;
-            background: var(--bg-dark);
-            color: var(--text-primary);
-            line-height: 1.6;
-            overflow-x: hidden;
-            transition: background-color 0.3s ease, color 0.3s ease;
-        }
+      body {
+        font-family: "Space Grotesk", sans-serif;
+        background: var(--bg-dark);
+        color: var(--text-primary);
+        line-height: 1.6;
+        overflow-x: hidden;
+        transition:
+          background-color 0.3s ease,
+          color 0.3s ease;
+      }
 
-        html {
-            overflow-x: hidden;
-        }
+      html {
+        overflow-x: hidden;
+      }
 
-        /* Navigation */
-        nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 100;
-            padding: 1rem 2rem;
-            background: var(--nav-bg);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background-color 0.3s ease;
-        }
+      /* Navigation */
+      nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+        padding: 1rem 2rem;
+        background: var(--nav-bg);
+        backdrop-filter: blur(20px);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: background-color 0.3s ease;
+      }
 
-        .nav-toggles {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-        
-        .logo {
-            font-family: 'Instrument Serif', serif;
-            font-size: 1.5rem;
-            font-style: italic;
-            background: linear-gradient(135deg, var(--accent-orange), var(--accent-cyan));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .nav-links {
-            display: flex;
-            gap: 0.5rem;
-        }
-        
-        .nav-links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            border-radius: 100px;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
-        }
-        
-        .nav-links a:hover {
-            color: var(--text-primary);
-            background: rgba(0,0,0,0.05);
-        }
-        
-        /* Slide Section */
-        .slide {
-            min-height: 100vh;
-            padding: 8rem 4rem 4rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-            border-bottom: 1px solid var(--border);
-            overflow-x: hidden;
-        }
-        
-        .slide-number {
-            position: absolute;
-            top: 6rem;
-            right: 4rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 8rem;
-            font-weight: 700;
-            color: rgba(232,93,42,0.12);
-            line-height: 1;
-        }
-        
-        .slide-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-            overflow-x: hidden;
-        }
-        
-        h1 {
-            font-family: 'Instrument Serif', serif;
-            font-size: 5rem;
-            font-weight: 400;
-            line-height: 1.1;
-            margin-bottom: 2rem;
-        }
-        
-        h1 .highlight {
-            font-style: italic;
-            background: linear-gradient(135deg, var(--accent-orange), var(--accent-purple));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        h2 {
-            font-size: 3rem;
-            font-weight: 500;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        h2::before {
-            content: '';
-            width: 40px;
-            height: 4px;
-            background: var(--accent-orange);
-            border-radius: 2px;
-        }
-        
-        .subtitle {
-            font-size: 1.5rem;
-            color: var(--text-secondary);
-            max-width: 700px;
-            margin-bottom: 3rem;
-        }
-        
-        /* Hero */
-        #hero {
-            background:
-                radial-gradient(ellipse at 30% 20%, rgba(232,93,42,0.08) 0%, transparent 50%),
-                radial-gradient(ellipse at 70% 80%, rgba(8,145,178,0.06) 0%, transparent 50%),
-                var(--bg-dark);
-        }
-        
-        .hero-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 1rem;
-            margin-top: 3rem;
-        }
-        
-        .hero-stat {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
+      .nav-toggles {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+      }
 
-        .hero-stat:hover {
-            transform: translateY(-4px);
-            border-color: var(--accent-orange);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-        }
-        
-        .hero-stat .number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--accent-cyan);
-        }
+      .logo {
+        font-family: "Instrument Serif", serif;
+        font-size: 1.5rem;
+        font-style: italic;
+        background: linear-gradient(
+          135deg,
+          var(--accent-orange),
+          var(--accent-cyan)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
 
-        .hero-stat .label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-top: 0.5rem;
-        }
+      .nav-links {
+        display: flex;
+        gap: 0.5rem;
+      }
 
-        /* New Hero Styles */
-        .hero-slide {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
+      .nav-links a {
+        color: var(--text-secondary);
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        border-radius: 100px;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
+      }
 
-        .hero-slide .slide-content {
-            text-align: center;
-            max-width: 900px;
-            margin: 0 auto;
-        }
+      .nav-links a:hover {
+        color: var(--text-primary);
+        background: rgba(0, 0, 0, 0.05);
+      }
 
-        .hero-badge {
-            display: inline-block;
-            padding: 0.5rem 1.25rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 100px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--accent-orange);
-            margin-bottom: 1.5rem;
-            letter-spacing: 0.02em;
-        }
+      /* Slide Section */
+      .slide {
+        min-height: 100vh;
+        padding: 8rem 4rem 4rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        border-bottom: 1px solid var(--border);
+        overflow-x: hidden;
+      }
 
-        .hero-tags {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 0.5rem;
-            margin-top: 2.5rem;
-        }
+      .slide-number {
+        position: absolute;
+        top: 6rem;
+        right: 4rem;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 8rem;
+        font-weight: 700;
+        color: rgba(232, 93, 42, 0.12);
+        line-height: 1;
+      }
 
-        .hero-tag-wrapper {
-            position: relative;
-        }
+      .slide-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        width: 100%;
+        overflow-x: hidden;
+      }
 
-        .hero-tag {
-            padding: 0.4rem 0.9rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 100px;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            transition: all 0.2s ease;
-            cursor: pointer;
-            display: block;
-            white-space: nowrap;
-        }
+      h1 {
+        font-family: "Instrument Serif", serif;
+        font-size: 5rem;
+        font-weight: 400;
+        line-height: 1.1;
+        margin-bottom: 2rem;
+      }
 
-        .hero-tag-wrapper:hover .hero-tag {
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-            transform: translateY(-2px);
-        }
+      h1 .highlight {
+        font-style: italic;
+        background: linear-gradient(
+          135deg,
+          var(--accent-orange),
+          var(--accent-purple)
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
 
-        /* Tooltip */
-        .hero-tag-tooltip {
-            position: absolute;
-            bottom: calc(100% + 12px);
-            left: 50%;
-            transform: translateX(-50%) translateY(10px);
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1rem 1.25rem;
-            min-width: 220px;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.25s ease;
-            z-index: 100;
-            text-align: left;
-        }
+      h2 {
+        font-size: 3rem;
+        font-weight: 500;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
 
-        .hero-tag-tooltip::after {
-            content: '';
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 8px solid transparent;
-            border-top-color: var(--bg-card);
-        }
+      h2::before {
+        content: "";
+        width: 40px;
+        height: 4px;
+        background: var(--accent-orange);
+        border-radius: 2px;
+      }
 
-        .hero-tag-wrapper:hover .hero-tag-tooltip {
-            opacity: 1;
-            visibility: visible;
-            transform: translateX(-50%) translateY(0);
-        }
+      .subtitle {
+        font-size: 1.5rem;
+        color: var(--text-secondary);
+        max-width: 700px;
+        margin-bottom: 3rem;
+      }
 
-        .tooltip-title {
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: var(--accent-orange);
-            margin-bottom: 0.75rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border);
-        }
+      /* Hero */
+      #hero {
+        background:
+          radial-gradient(
+            ellipse at 30% 20%,
+            rgba(232, 93, 42, 0.08) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            ellipse at 70% 80%,
+            rgba(8, 145, 178, 0.06) 0%,
+            transparent 50%
+          ),
+          var(--bg-dark);
+      }
 
-        .hero-tag-tooltip ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
+      .hero-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
+        margin-top: 3rem;
+      }
 
-        .hero-tag-tooltip li {
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            padding: 0.3rem 0;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+      .hero-stat {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      }
 
-        .hero-tag-tooltip li::before {
-            content: '→';
-            color: var(--accent-cyan);
-            font-size: 0.7rem;
-        }
+      .hero-stat:hover {
+        transform: translateY(-4px);
+        border-color: var(--accent-orange);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      }
 
-        .hero-tag-tooltip li.more {
-            color: var(--text-secondary);
-            font-style: italic;
-            opacity: 0.7;
-        }
+      .hero-stat .number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--accent-cyan);
+      }
 
-        .hero-tag-tooltip li.more::before {
-            content: '';
-        }
+      .hero-stat .label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-top: 0.5rem;
+      }
 
-        .hero-tag-tooltip code {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            background: rgba(0,0,0,0.1);
-            padding: 0.1rem 0.4rem;
-            border-radius: 4px;
-            color: var(--accent-purple);
-        }
+      /* New Hero Styles */
+      .hero-slide {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
 
-        body.dark-mode .hero-tag-tooltip code {
-            background: rgba(255,255,255,0.1);
-        }
+      .hero-slide .slide-content {
+        text-align: center;
+        max-width: 900px;
+        margin: 0 auto;
+      }
 
-        /* SVG Architecture Diagram */
-        .svg-diagram-container {
-            margin: 2.5rem auto;
-            max-width: min(850px, calc(100vw - 4rem));
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 1.5rem;
-            border: 1px solid var(--border);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            overflow-x: auto;
-        }
+      .hero-badge {
+        display: inline-block;
+        padding: 0.5rem 1.25rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--accent-orange);
+        margin-bottom: 1.5rem;
+        letter-spacing: 0.02em;
+      }
 
-        .architecture-svg {
-            width: 100%;
-            height: auto;
-            min-height: 300px;
-        }
+      .hero-tags {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 2.5rem;
+      }
 
-        .architecture-svg text {
-            font-family: 'Space Grotesk', sans-serif;
-        }
+      .hero-tag-wrapper {
+        position: relative;
+      }
 
-        .architecture-svg .harness-modules rect {
-            transition: all 0.2s ease;
-        }
+      .hero-tag {
+        padding: 0.4rem 0.9rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        transition: all 0.2s ease;
+        cursor: pointer;
+        display: block;
+        white-space: nowrap;
+      }
 
-        .architecture-svg .harness-modules rect:hover {
-            filter: brightness(1.1);
-            transform: translateY(-2px);
-        }
+      .hero-tag-wrapper:hover .hero-tag {
+        border-color: var(--accent-cyan);
+        color: var(--accent-cyan);
+        transform: translateY(-2px);
+      }
 
-        /* ASCII Diagram Terminal */
-        .ascii-diagram-terminal {
-            margin: 2rem auto;
-            max-width: min(900px, calc(100vw - 4rem));
-            background: var(--code-bg);
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-        }
+      /* Tooltip */
+      .hero-tag-tooltip {
+        position: absolute;
+        bottom: calc(100% + 12px);
+        left: 50%;
+        transform: translateX(-50%) translateY(10px);
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        min-width: 220px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.25s ease;
+        z-index: 100;
+        text-align: left;
+      }
 
-        .ascii-body {
-            padding: 1rem 1.5rem;
-            overflow-x: auto;
-        }
+      .hero-tag-tooltip::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 8px solid transparent;
+        border-top-color: var(--bg-card);
+      }
 
+      .hero-tag-wrapper:hover .hero-tag-tooltip {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      .tooltip-title {
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--accent-orange);
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .hero-tag-tooltip ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+
+      .hero-tag-tooltip li {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        padding: 0.3rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .hero-tag-tooltip li::before {
+        content: "→";
+        color: var(--accent-cyan);
+        font-size: 0.7rem;
+      }
+
+      .hero-tag-tooltip li.more {
+        color: var(--text-secondary);
+        font-style: italic;
+        opacity: 0.7;
+      }
+
+      .hero-tag-tooltip li.more::before {
+        content: "";
+      }
+
+      .hero-tag-tooltip code {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.75rem;
+        background: rgba(0, 0, 0, 0.1);
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        color: var(--accent-purple);
+      }
+
+      body.dark-mode .hero-tag-tooltip code {
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      /* SVG Architecture Diagram */
+      .svg-diagram-container {
+        margin: 2.5rem auto;
+        max-width: min(850px, calc(100vw - 4rem));
+        background: var(--bg-card);
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        overflow-x: auto;
+      }
+
+      .architecture-svg {
+        width: 100%;
+        height: auto;
+        min-height: 300px;
+      }
+
+      .architecture-svg text {
+        font-family: "Space Grotesk", sans-serif;
+      }
+
+      .architecture-svg .harness-modules rect {
+        transition: all 0.2s ease;
+      }
+
+      .architecture-svg .harness-modules rect:hover {
+        filter: brightness(1.1);
+        transform: translateY(-2px);
+      }
+
+      /* ASCII Diagram Terminal */
+      .ascii-diagram-terminal {
+        margin: 2rem auto;
+        max-width: min(900px, calc(100vw - 4rem));
+        background: var(--code-bg);
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      }
+
+      .ascii-body {
+        padding: 1rem 1.5rem;
+        overflow-x: auto;
+      }
+
+      .ascii-art {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.7rem;
+        line-height: 1.4;
+        color: #94a3b8;
+        margin: 0;
+        white-space: pre;
+      }
+
+      .ascii-highlight {
+        color: #fb923c;
+        font-weight: bold;
+      }
+
+      .ascii-func {
+        color: #22d3ee;
+      }
+
+      .ascii-type {
+        color: #a78bfa;
+      }
+
+      .ascii-return {
+        color: #f472b6;
+      }
+
+      .ascii-api {
+        color: #4ade80;
+      }
+
+      @media (max-width: 768px) {
         .ascii-art {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            line-height: 1.4;
-            color: #94a3b8;
-            margin: 0;
-            white-space: pre;
+          font-size: 0.5rem;
         }
-
-        .ascii-highlight {
-            color: #fb923c;
-            font-weight: bold;
+        .svg-diagram-container {
+          padding: 0.75rem;
         }
+      }
 
-        .ascii-func {
-            color: #22d3ee;
-        }
+      /* Terminal Style for Deep Mode */
+      .hero-terminal {
+        margin: 2.5rem auto 0;
+        max-width: 700px;
+        background: var(--code-bg);
+        border-radius: 12px;
+        overflow: hidden;
+        text-align: left;
+        border: 1px solid var(--border);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      }
 
-        .ascii-type {
-            color: #a78bfa;
-        }
+      .terminal-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid var(--border);
+      }
 
-        .ascii-return {
-            color: #f472b6;
-        }
+      .terminal-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
 
-        .ascii-api {
-            color: #4ade80;
-        }
+      .terminal-dot.red {
+        background: #ff5f56;
+      }
+      .terminal-dot.yellow {
+        background: #ffbd2e;
+      }
+      .terminal-dot.green {
+        background: #27ca40;
+      }
 
-        @media (max-width: 768px) {
-            .ascii-art {
-                font-size: 0.5rem;
-            }
-            .svg-diagram-container {
-                padding: 0.75rem;
-            }
-        }
+      .terminal-title {
+        margin-left: auto;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        font-family: "JetBrains Mono", monospace;
+      }
 
-        /* Terminal Style for Deep Mode */
+      .terminal-body {
+        padding: 1.25rem 1.5rem;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.85rem;
+        line-height: 1.8;
+      }
+
+      .terminal-line {
+        color: var(--code-text);
+      }
+
+      .term-key {
+        color: #a78bfa;
+        font-weight: 500;
+      }
+
+      .term-arrow {
+        color: #64748b;
+        margin: 0 0.25rem;
+      }
+
+      .term-val {
+        color: #22d3ee;
+      }
+
+      .hero-cta {
+        margin-top: 3rem;
+      }
+
+      .cta-button {
+        display: inline-block;
+        padding: 1rem 2rem;
+        background: var(--accent-orange);
+        color: white;
+        text-decoration: none;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 16px rgba(232, 93, 42, 0.3);
+      }
+
+      .cta-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(232, 93, 42, 0.4);
+      }
+
+      @media (max-width: 768px) {
         .hero-terminal {
-            margin: 2.5rem auto 0;
-            max-width: 700px;
-            background: var(--code-bg);
-            border-radius: 12px;
-            overflow: hidden;
-            text-align: left;
-            border: 1px solid var(--border);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+          font-size: 0.75rem;
         }
-
-        .terminal-header {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1rem;
-            background: rgba(0,0,0,0.2);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .terminal-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-
-        .terminal-dot.red { background: #ff5f56; }
-        .terminal-dot.yellow { background: #ffbd2e; }
-        .terminal-dot.green { background: #27ca40; }
-
-        .terminal-title {
-            margin-left: auto;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
         .terminal-body {
-            padding: 1.25rem 1.5rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            line-height: 1.8;
+          padding: 1rem;
         }
+      }
 
-        .terminal-line {
-            color: var(--code-text);
-        }
+      /* What is a Harness - Comparison */
+      .comparison-grid {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        margin: 3rem 0;
+      }
 
-        .term-key {
-            color: #a78bfa;
-            font-weight: 500;
-        }
+      .comparison-card {
+        flex: 1;
+        max-width: 400px;
+        background: var(--bg-card);
+        border: 2px solid var(--border);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
 
-        .term-arrow {
-            color: #64748b;
-            margin: 0 0.25rem;
-        }
+      .comparison-card.llm-only {
+        border-color: rgba(100, 116, 139, 0.3);
+      }
 
-        .term-val {
-            color: #22d3ee;
-        }
+      .comparison-card.with-harness {
+        border-color: var(--accent-cyan);
+        background: linear-gradient(
+          135deg,
+          rgba(8, 145, 178, 0.05) 0%,
+          var(--bg-card) 100%
+        );
+      }
 
-        .hero-cta {
-            margin-top: 3rem;
-        }
+      .comparison-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+      }
 
-        .cta-button {
-            display: inline-block;
-            padding: 1rem 2rem;
-            background: var(--accent-orange);
-            color: white;
-            text-decoration: none;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 16px rgba(232,93,42,0.3);
-        }
+      .comparison-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+      }
 
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(232,93,42,0.4);
-        }
+      .comparison-card h3 {
+        font-size: 1.4rem;
+        margin-bottom: 0.5rem;
+      }
 
-        @media (max-width: 768px) {
-            .hero-terminal {
-                font-size: 0.75rem;
-            }
-            .terminal-body {
-                padding: 1rem;
-            }
-        }
+      .comparison-metaphor {
+        font-family: "Instrument Serif", serif;
+        font-style: italic;
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+      }
 
-        /* What is a Harness - Comparison */
+      .comparison-card ul {
+        list-style: none;
+        text-align: left;
+      }
+
+      .comparison-card li {
+        padding: 0.5rem 0;
+        color: var(--text-secondary);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .comparison-card li::before {
+        content: "•";
+        color: var(--accent-orange);
+        margin-right: 0.75rem;
+      }
+
+      .with-harness li::before {
+        content: "✓";
+        color: var(--accent-cyan);
+      }
+
+      .comparison-arrow {
+        font-size: 3rem;
+        color: var(--accent-orange);
+        font-weight: bold;
+      }
+
+      .harness-responsibilities {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+
+      .responsibility {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      }
+
+      .responsibility:hover {
+        border-color: var(--accent-orange);
+        transform: translateY(-2px);
+      }
+
+      .resp-icon {
+        font-size: 1.1rem;
+      }
+
+      @media (max-width: 768px) {
         .comparison-grid {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 2rem;
-            margin: 3rem 0;
+          flex-direction: column;
         }
-
-        .comparison-card {
-            flex: 1;
-            max-width: 400px;
-            background: var(--bg-card);
-            border: 2px solid var(--border);
-            border-radius: 20px;
-            padding: 2rem;
-            text-align: center;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
-
-        .comparison-card.llm-only {
-            border-color: rgba(100,116,139,0.3);
-        }
-
-        .comparison-card.with-harness {
-            border-color: var(--accent-cyan);
-            background: linear-gradient(135deg, rgba(8,145,178,0.05) 0%, var(--bg-card) 100%);
-        }
-
-        .comparison-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 32px rgba(0,0,0,0.1);
-        }
-
-        .comparison-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-
-        .comparison-card h3 {
-            font-size: 1.4rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .comparison-metaphor {
-            font-family: 'Instrument Serif', serif;
-            font-style: italic;
-            color: var(--text-secondary);
-            font-size: 1.1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .comparison-card ul {
-            list-style: none;
-            text-align: left;
-        }
-
-        .comparison-card li {
-            padding: 0.5rem 0;
-            color: var(--text-secondary);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .comparison-card li::before {
-            content: '•';
-            color: var(--accent-orange);
-            margin-right: 0.75rem;
-        }
-
-        .with-harness li::before {
-            content: '✓';
-            color: var(--accent-cyan);
-        }
-
         .comparison-arrow {
-            font-size: 3rem;
-            color: var(--accent-orange);
-            font-weight: bold;
+          transform: rotate(90deg);
         }
-
-        .harness-responsibilities {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 1rem;
-            margin-top: 2rem;
+        .comparison-card {
+          max-width: 100%;
         }
+      }
 
-        .responsibility {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.25rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 100px;
-            font-size: 0.9rem;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-        }
+      /* Technical Diagram */
+      .technical-diagram {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 2rem 0;
+        padding: 2rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
 
-        .responsibility:hover {
-            border-color: var(--accent-orange);
-            transform: translateY(-2px);
-        }
+      .diagram-layer {
+        width: 100%;
+        max-width: 700px;
+        padding: 1rem 1.5rem;
+        border-radius: 12px;
+        text-align: center;
+      }
 
-        .resp-icon {
-            font-size: 1.1rem;
-        }
+      .user-layer {
+        background: linear-gradient(
+          135deg,
+          rgba(124, 58, 237, 0.1) 0%,
+          rgba(124, 58, 237, 0.05) 100%
+        );
+        border: 1px solid rgba(124, 58, 237, 0.3);
+      }
 
-        @media (max-width: 768px) {
-            .comparison-grid {
-                flex-direction: column;
-            }
-            .comparison-arrow {
-                transform: rotate(90deg);
-            }
-            .comparison-card {
-                max-width: 100%;
-            }
-        }
+      .harness-layer {
+        background: linear-gradient(
+          135deg,
+          rgba(232, 93, 42, 0.1) 0%,
+          rgba(232, 93, 42, 0.05) 100%
+        );
+        border: 2px solid var(--accent-orange);
+      }
 
-        /* Technical Diagram */
-        .technical-diagram {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 2rem 0;
-            padding: 2rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        }
+      .llm-layer {
+        background: linear-gradient(
+          135deg,
+          rgba(8, 145, 178, 0.1) 0%,
+          rgba(8, 145, 178, 0.05) 100%
+        );
+        border: 1px solid rgba(8, 145, 178, 0.3);
+      }
 
-        .diagram-layer {
-            width: 100%;
-            max-width: 700px;
-            padding: 1rem 1.5rem;
-            border-radius: 12px;
-            text-align: center;
-        }
+      .layer-name {
+        display: block;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
 
-        .user-layer {
-            background: linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(124,58,237,0.05) 100%);
-            border: 1px solid rgba(124,58,237,0.3);
-        }
+      .layer-components {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
 
-        .harness-layer {
-            background: linear-gradient(135deg, rgba(232,93,42,0.1) 0%, rgba(232,93,42,0.05) 100%);
-            border: 2px solid var(--accent-orange);
-        }
+      .harness-internals {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        margin-top: 0.75rem;
+      }
 
-        .llm-layer {
-            background: linear-gradient(135deg, rgba(8,145,178,0.1) 0%, rgba(8,145,178,0.05) 100%);
-            border: 1px solid rgba(8,145,178,0.3);
-        }
+      .harness-module {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.75rem 0.5rem;
+        font-size: 0.8rem;
+      }
 
-        .layer-name {
-            display: block;
-            font-weight: 600;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
+      .harness-module code {
+        display: block;
+        font-family: "JetBrains Mono", monospace;
+        color: var(--accent-orange);
+        font-size: 0.85rem;
+        margin-bottom: 0.25rem;
+      }
 
-        .layer-components {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
+      .harness-module span {
+        color: var(--text-secondary);
+        font-size: 0.7rem;
+      }
 
+      .diagram-arrow {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        padding: 0.25rem 0;
+      }
+
+      /* Technical Details */
+      .technical-details {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin: 2rem 0;
+      }
+
+      .tech-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      }
+
+      .tech-card h4 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        color: var(--text-primary);
+      }
+
+      .code-snippet {
+        background: var(--code-bg);
+        border-radius: 8px;
+        padding: 1rem;
+        overflow-x: auto;
+        border: 1px solid var(--border);
+      }
+
+      .code-snippet pre {
+        margin: 0;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.8rem;
+        line-height: 1.5;
+        color: var(--code-text);
+      }
+
+      /* Core Contracts */
+      .core-contracts {
+        margin-top: 2rem;
+      }
+
+      .core-contracts h4 {
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        color: var(--accent-cyan);
+      }
+
+      .contracts-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      .contract {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        transition: all 0.2s ease;
+      }
+
+      .contract:hover {
+        border-color: var(--accent-cyan);
+      }
+
+      .contract code {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--accent-orange);
+        background: rgba(232, 93, 42, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        white-space: nowrap;
+      }
+
+      .contract span {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
+
+      @media (max-width: 768px) {
         .harness-internals {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 0.75rem;
-            margin-top: 0.75rem;
+          grid-template-columns: repeat(2, 1fr);
         }
-
-        .harness-module {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 0.75rem 0.5rem;
-            font-size: 0.8rem;
-        }
-
-        .harness-module code {
-            display: block;
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--accent-orange);
-            font-size: 0.85rem;
-            margin-bottom: 0.25rem;
-        }
-
-        .harness-module span {
-            color: var(--text-secondary);
-            font-size: 0.7rem;
-        }
-
-        .diagram-arrow {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            padding: 0.25rem 0;
-        }
-
-        /* Technical Details */
-        .technical-details {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-            margin: 2rem 0;
-        }
-
-        .tech-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1.25rem;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        }
-
-        .tech-card h4 {
-            font-size: 1rem;
-            margin-bottom: 1rem;
-            color: var(--text-primary);
-        }
-
-        .code-snippet {
-            background: var(--code-bg);
-            border-radius: 8px;
-            padding: 1rem;
-            overflow-x: auto;
-            border: 1px solid var(--border);
-        }
-
-        .code-snippet pre {
-            margin: 0;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            line-height: 1.5;
-            color: var(--code-text);
-        }
-
-        /* Core Contracts */
-        .core-contracts {
-            margin-top: 2rem;
-        }
-
-        .core-contracts h4 {
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-            color: var(--accent-cyan);
-        }
-
+        .technical-details,
         .contracts-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1rem;
+          grid-template-columns: 1fr;
         }
+      }
 
-        .contract {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            transition: all 0.2s ease;
-        }
+      /* Toggle Switch */
+      .depth-toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
 
-        .contract:hover {
-            border-color: var(--accent-cyan);
-        }
+      .toggle-label {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
 
-        .contract code {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--accent-orange);
-            background: rgba(232,93,42,0.1);
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            white-space: nowrap;
-        }
+      .toggle-switch {
+        position: relative;
+        width: 48px;
+        height: 26px;
+      }
 
-        .contract span {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-        }
+      .toggle-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
 
-        @media (max-width: 768px) {
-            .harness-internals {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .technical-details, .contracts-grid {
-                grid-template-columns: 1fr;
-            }
-        }
+      .toggle-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: var(--border);
+        border-radius: 26px;
+        transition: 0.3s;
+      }
 
-        /* Toggle Switch */
-        .depth-toggle {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
+      .toggle-slider:before {
+        position: absolute;
+        content: "";
+        height: 20px;
+        width: 20px;
+        left: 3px;
+        bottom: 3px;
+        background: white;
+        border-radius: 50%;
+        transition: 0.3s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
 
-        .toggle-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
+      .toggle-switch input:checked + .toggle-slider {
+        background: var(--accent-orange);
+      }
 
-        .toggle-switch {
-            position: relative;
-            width: 48px;
-            height: 26px;
-        }
+      .toggle-switch input:checked + .toggle-slider:before {
+        transform: translateX(22px);
+      }
 
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
+      /* Theme Toggle Button */
+      .theme-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--bg-card);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        color: var(--text-primary);
+      }
 
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--border);
-            border-radius: 26px;
-            transition: 0.3s;
-        }
+      .theme-toggle:hover {
+        border-color: var(--accent-orange);
+        transform: scale(1.05);
+      }
 
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 3px;
-            bottom: 3px;
-            background: white;
-            border-radius: 50%;
-            transition: 0.3s;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
+      .theme-toggle .sun-icon {
+        display: block;
+      }
 
-        .toggle-switch input:checked + .toggle-slider {
-            background: var(--accent-orange);
-        }
+      .theme-toggle .moon-icon {
+        display: none;
+      }
 
-        .toggle-switch input:checked + .toggle-slider:before {
-            transform: translateX(22px);
-        }
+      body.dark-mode .theme-toggle .sun-icon {
+        display: none;
+      }
 
-        /* Theme Toggle Button */
-        .theme-toggle {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 40px;
-            height: 40px;
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            background: var(--bg-card);
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: var(--text-primary);
-        }
+      body.dark-mode .theme-toggle .moon-icon {
+        display: block;
+      }
 
-        .theme-toggle:hover {
-            border-color: var(--accent-orange);
-            transform: scale(1.05);
-        }
+      /* Simple/Deep Mode Visibility */
+      .simple-content {
+        display: block;
+      }
+      .deep-content {
+        display: none;
+      }
 
-        .theme-toggle .sun-icon {
-            display: block;
-        }
+      /* Hero tags need flex for horizontal layout */
+      .hero-tags.simple-content {
+        display: flex;
+      }
 
-        .theme-toggle .moon-icon {
-            display: none;
-        }
+      body.deep-mode .simple-content {
+        display: none;
+      }
+      body.deep-mode .deep-content {
+        display: block;
+      }
 
-        body.dark-mode .theme-toggle .sun-icon {
-            display: none;
-        }
+      /* Deep mode code blocks */
+      .deep-code {
+        background: var(--code-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        overflow-x: auto;
+        border: 1px solid var(--border);
+        max-width: 100%;
+      }
 
-        body.dark-mode .theme-toggle .moon-icon {
-            display: block;
-        }
+      .deep-code pre {
+        margin: 0;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.85rem;
+        overflow-x: auto;
+        line-height: 1.6;
+        color: var(--code-text);
+      }
 
-        /* Simple/Deep Mode Visibility */
-        .simple-content { display: block; }
-        .deep-content { display: none; }
+      .deep-code .comment {
+        color: #64748b;
+      }
+      .deep-code .keyword {
+        color: #f472b6;
+      }
+      .deep-code .string {
+        color: #a5f3fc;
+      }
+      .deep-code .function {
+        color: #fbbf24;
+      }
+      .deep-code .type {
+        color: #a78bfa;
+      }
 
-        body.deep-mode .simple-content { display: none; }
-        body.deep-mode .deep-content { display: block; }
+      /* Technical annotations */
+      .tech-annotation {
+        display: flex;
+        gap: 1rem;
+        padding: 1rem;
+        background: rgba(8, 145, 178, 0.08);
+        border-left: 3px solid var(--accent-cyan);
+        border-radius: 0 8px 8px 0;
+        margin: 1rem 0;
+      }
 
-        /* Deep mode code blocks */
-        .deep-code {
-            background: var(--code-bg);
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin: 1.5rem 0;
-            overflow-x: auto;
-            border: 1px solid var(--border);
-            max-width: 100%;
-        }
+      .tech-annotation code {
+        font-family: "JetBrains Mono", monospace;
+        background: rgba(0, 0, 0, 0.1);
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.85rem;
+      }
 
-        .deep-code pre {
-            margin: 0;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            overflow-x: auto;
-            line-height: 1.6;
-            color: var(--code-text);
-        }
+      .implementation-note {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        padding: 1rem;
+        background: var(--bg-card);
+        border: 1px dashed var(--border);
+        border-radius: 8px;
+        margin: 1rem 0;
+      }
 
-        .deep-code .comment { color: #64748b; }
-        .deep-code .keyword { color: #f472b6; }
-        .deep-code .string { color: #a5f3fc; }
-        .deep-code .function { color: #fbbf24; }
-        .deep-code .type { color: #a78bfa; }
-
-        /* Technical annotations */
-        .tech-annotation {
-            display: flex;
-            gap: 1rem;
-            padding: 1rem;
-            background: rgba(8,145,178,0.08);
-            border-left: 3px solid var(--accent-cyan);
-            border-radius: 0 8px 8px 0;
-            margin: 1rem 0;
-        }
-
-        .tech-annotation code {
-            font-family: 'JetBrains Mono', monospace;
-            background: rgba(0,0,0,0.1);
-            padding: 0.15rem 0.4rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
-
-        .implementation-note {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            padding: 1rem;
-            background: var(--bg-card);
-            border: 1px dashed var(--border);
-            border-radius: 8px;
-            margin: 1rem 0;
-        }
-
-        .implementation-note strong {
-            color: var(--accent-orange);
-        }
+      .implementation-note strong {
+        color: var(--accent-orange);
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <nav>
-        <div class="logo">AI Harness</div>
-        <div class="nav-links">
-            <a href="#hero">Overview</a>
-            <a href="#what-is">What is it?</a>
-            <a href="#query-loop">Query Loop</a>
-            <a href="#tools">Tools</a>
-            <a href="#permissions">Permissions</a>
-            <a href="#context">Context</a>
-            <a href="#patterns">Patterns</a>
+      <div class="logo">AI Harness</div>
+      <div class="nav-links">
+        <a href="#hero">Overview</a>
+        <a href="#what-is">What is it?</a>
+        <a href="#query-loop">Query Loop</a>
+        <a href="#tools">Tools</a>
+        <a href="#permissions">Permissions</a>
+        <a href="#context">Context</a>
+        <a href="#patterns">Patterns</a>
+      </div>
+      <div class="nav-toggles">
+        <div class="depth-toggle">
+          <span class="toggle-label">Deep Mode</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="deepModeToggle" checked />
+            <span class="toggle-slider"></span>
+          </label>
         </div>
-        <div class="nav-toggles">
-            <div class="depth-toggle">
-                <span class="toggle-label">Deep Mode</span>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="deepModeToggle" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-            <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
-                <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-                <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-            </button>
-        </div>
+        <button
+          class="theme-toggle"
+          id="themeToggle"
+          aria-label="Toggle dark mode"
+        >
+          <svg
+            class="sun-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg
+            class="moon-icon"
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        </button>
+      </div>
     </nav>
 
     <!-- Hero Section -->
     <section id="hero" class="slide hero-slide">
-        <div class="slide-number">00</div>
-        <div class="slide-content">
-            <h1>Understanding the<br><span class="highlight">AI Agent Harness</span></h1>
+      <div class="slide-number">00</div>
+      <div class="slide-content">
+        <h1>
+          Understanding the<br /><span class="highlight">AI Agent Harness</span>
+        </h1>
 
-            <!-- Simple subtitle -->
-            <p class="subtitle simple-content">A comprehensive deep dive into Claude Code's production-grade architecture — the orchestration layer that powers intelligent AI agents.</p>
+        <!-- Simple subtitle -->
+        <p class="subtitle hero-tags simple-content">
+          A comprehensive deep dive into Claude Code's production-grade
+          architecture — the orchestration layer that powers intelligent AI
+          agents.
+        </p>
 
-            <!-- Technical subtitle -->
-            <p class="subtitle deep-content">Reverse-engineering Claude Code's runtime: <code>async function* query()</code> → ReAct loop, tool dispatch via <code>Tool&lt;I,O&gt;</code> interface, context compaction at 90% of 200K tokens.</p>
+        <!-- Technical subtitle -->
+        <p class="subtitle deep-content">
+          Reverse-engineering Claude Code's runtime:
+          <code>async function* query()</code> → ReAct loop, tool dispatch via
+          <code>Tool&lt;I,O&gt;</code> interface, context compaction at 90% of
+          200K tokens.
+        </p>
 
-            <!-- Simple: Clean pill tags with hover tooltips -->
-            <div class="hero-tags simple-content">
-                <div class="hero-tag-wrapper">
-                    <span class="hero-tag">12 Core Components</span>
-                    <div class="hero-tag-tooltip">
-                        <div class="tooltip-title">Core Components</div>
-                        <ul>
-                            <li>Query Loop</li>
-                            <li>Tool Registry</li>
-                            <li>Permission System</li>
-                            <li>Context Manager</li>
-                            <li>Streaming Handler</li>
-                            <li>Error Recovery</li>
-                            <li>Message Parser</li>
-                            <li>Compaction Agent</li>
-                            <li>MCP Client</li>
-                            <li>Session State</li>
-                            <li>Config Loader</li>
-                            <li>UI Renderer</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="hero-tag-wrapper">
-                    <span class="hero-tag">50+ Tools</span>
-                    <div class="hero-tag-tooltip">
-                        <div class="tooltip-title">Built-in Tools</div>
-                        <ul>
-                            <li>FileReadTool</li>
-                            <li>FileEditTool</li>
-                            <li>BashTool</li>
-                            <li>GlobTool</li>
-                            <li>GrepTool</li>
-                            <li>WebSearchTool</li>
-                            <li>WebFetchTool</li>
-                            <li>AgentTool</li>
-                            <li class="more">+ 42 more...</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="hero-tag-wrapper">
-                    <span class="hero-tag">4 Permission Modes</span>
-                    <div class="hero-tag-tooltip">
-                        <div class="tooltip-title">Permission Modes</div>
-                        <ul>
-                            <li><code>default</code> — Ask for dangerous ops</li>
-                            <li><code>auto</code> — ML classifier approval</li>
-                            <li><code>plan</code> — Read-only mode</li>
-                            <li><code>bypass</code> — Trust everything</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="hero-tag-wrapper">
-                    <span class="hero-tag">200K Context</span>
-                    <div class="hero-tag-tooltip">
-                        <div class="tooltip-title">Context Window</div>
-                        <ul>
-                            <li>~200K token limit</li>
-                            <li>Auto-compact at 90%</li>
-                            <li>Microcompaction for large outputs</li>
-                            <li>tiktoken (cl100k_base)</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="hero-tag-wrapper">
-                    <span class="hero-tag">MCP Extensible</span>
-                    <div class="hero-tag-tooltip">
-                        <div class="tooltip-title">Model Context Protocol</div>
-                        <ul>
-                            <li>JSON-RPC over stdio/HTTP</li>
-                            <li>Dynamic tool discovery</li>
-                            <li>External server integration</li>
-                            <li>Unified Tool interface</li>
-                        </ul>
-                    </div>
-                </div>
+        <!-- Simple: Clean pill tags with hover tooltips -->
+        <div class="hero-tags hero-tags simple-content">
+          <div class="hero-tag-wrapper">
+            <span class="hero-tag">12 Core Components</span>
+            <div class="hero-tag-tooltip">
+              <div class="tooltip-title">Core Components</div>
+              <ul>
+                <li>Query Loop</li>
+                <li>Tool Registry</li>
+                <li>Permission System</li>
+                <li>Context Manager</li>
+                <li>Streaming Handler</li>
+                <li>Error Recovery</li>
+                <li>Message Parser</li>
+                <li>Compaction Agent</li>
+                <li>MCP Client</li>
+                <li>Session State</li>
+                <li>Config Loader</li>
+                <li>UI Renderer</li>
+              </ul>
             </div>
-
-            <!-- Deep: Terminal-style stack info -->
-            <div class="hero-terminal deep-content">
-                <div class="terminal-header">
-                    <span class="terminal-dot red"></span>
-                    <span class="terminal-dot yellow"></span>
-                    <span class="terminal-dot green"></span>
-                    <span class="terminal-title">architecture.md</span>
-                </div>
-                <div class="terminal-body">
-                    <div class="terminal-line"><span class="term-key">entry</span> <span class="term-arrow">→</span> <span class="term-val">cli.tsx</span> <span class="term-arrow">→</span> <span class="term-val">query.ts</span> <span class="term-arrow">→</span> <span class="term-val">Tool.call()</span></div>
-                    <div class="terminal-line"><span class="term-key">loop</span> <span class="term-arrow">→</span> <span class="term-val">while(true)</span> until <span class="term-val">stop_reason: 'end_turn'</span></div>
-                    <div class="terminal-line"><span class="term-key">stack</span> <span class="term-arrow">→</span> <span class="term-val">TypeScript</span> + <span class="term-val">Ink</span> + <span class="term-val">Zod</span> + <span class="term-val">tiktoken</span></div>
-                    <div class="terminal-line"><span class="term-key">tools</span> <span class="term-arrow">→</span> <span class="term-val">Tool&lt;TInput, TOutput&gt;</span> with Zod→JSON Schema</div>
-                    <div class="terminal-line"><span class="term-key">context</span> <span class="term-arrow">→</span> <span class="term-val">200K tokens</span>, compact at 90% via summary agent</div>
-                </div>
+          </div>
+          <div class="hero-tag-wrapper">
+            <span class="hero-tag">50+ Tools</span>
+            <div class="hero-tag-tooltip">
+              <div class="tooltip-title">Built-in Tools</div>
+              <ul>
+                <li>FileReadTool</li>
+                <li>FileEditTool</li>
+                <li>BashTool</li>
+                <li>GlobTool</li>
+                <li>GrepTool</li>
+                <li>WebSearchTool</li>
+                <li>WebFetchTool</li>
+                <li>AgentTool</li>
+                <li class="more">+ 42 more...</li>
+              </ul>
             </div>
-
-            <div class="hero-cta">
-                <a href="#what-is" class="cta-button">Explore Architecture ↓</a>
+          </div>
+          <div class="hero-tag-wrapper">
+            <span class="hero-tag">4 Permission Modes</span>
+            <div class="hero-tag-tooltip">
+              <div class="tooltip-title">Permission Modes</div>
+              <ul>
+                <li><code>default</code> — Ask for dangerous ops</li>
+                <li><code>auto</code> — ML classifier approval</li>
+                <li><code>plan</code> — Read-only mode</li>
+                <li><code>bypass</code> — Trust everything</li>
+              </ul>
             </div>
+          </div>
+          <div class="hero-tag-wrapper">
+            <span class="hero-tag">200K Context</span>
+            <div class="hero-tag-tooltip">
+              <div class="tooltip-title">Context Window</div>
+              <ul>
+                <li>~200K token limit</li>
+                <li>Auto-compact at 90%</li>
+                <li>Microcompaction for large outputs</li>
+                <li>tiktoken (cl100k_base)</li>
+              </ul>
+            </div>
+          </div>
+          <div class="hero-tag-wrapper">
+            <span class="hero-tag">MCP Extensible</span>
+            <div class="hero-tag-tooltip">
+              <div class="tooltip-title">Model Context Protocol</div>
+              <ul>
+                <li>JSON-RPC over stdio/HTTP</li>
+                <li>Dynamic tool discovery</li>
+                <li>External server integration</li>
+                <li>Unified Tool interface</li>
+              </ul>
+            </div>
+          </div>
         </div>
+
+        <!-- Deep: Terminal-style stack info -->
+        <div class="hero-terminal deep-content">
+          <div class="terminal-header">
+            <span class="terminal-dot red"></span>
+            <span class="terminal-dot yellow"></span>
+            <span class="terminal-dot green"></span>
+            <span class="terminal-title">architecture.md</span>
+          </div>
+          <div class="terminal-body">
+            <div class="terminal-line">
+              <span class="term-key">entry</span>
+              <span class="term-arrow">→</span>
+              <span class="term-val">cli.tsx</span>
+              <span class="term-arrow">→</span>
+              <span class="term-val">query.ts</span>
+              <span class="term-arrow">→</span>
+              <span class="term-val">Tool.call()</span>
+            </div>
+            <div class="terminal-line">
+              <span class="term-key">loop</span>
+              <span class="term-arrow">→</span>
+              <span class="term-val">while(true)</span> until
+              <span class="term-val">stop_reason: 'end_turn'</span>
+            </div>
+            <div class="terminal-line">
+              <span class="term-key">stack</span>
+              <span class="term-arrow">→</span>
+              <span class="term-val">TypeScript</span> +
+              <span class="term-val">Ink</span> +
+              <span class="term-val">Zod</span> +
+              <span class="term-val">tiktoken</span>
+            </div>
+            <div class="terminal-line">
+              <span class="term-key">tools</span>
+              <span class="term-arrow">→</span>
+              <span class="term-val">Tool&lt;TInput, TOutput&gt;</span> with
+              Zod→JSON Schema
+            </div>
+            <div class="terminal-line">
+              <span class="term-key">context</span>
+              <span class="term-arrow">→</span>
+              <span class="term-val">200K tokens</span>, compact at 90% via
+              summary agent
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-cta">
+          <a href="#what-is" class="cta-button">Explore Architecture ↓</a>
+        </div>
+      </div>
     </section>
 
     <!-- What is a Harness Section -->
     <section id="what-is" class="slide">
-        <div class="slide-number">01</div>
-        <div class="slide-content">
-            <h2>What is an AI Harness?</h2>
+      <div class="slide-number">01</div>
+      <div class="slide-content">
+        <h2>What is an AI Harness?</h2>
 
-            <!-- Simple subtitle -->
-            <p class="subtitle simple-content">The orchestration layer that transforms a raw LLM into a functional AI agent.</p>
+        <!-- Simple subtitle -->
+        <p class="subtitle hero-tags simple-content">
+          The orchestration layer that transforms a raw LLM into a functional AI
+          agent.
+        </p>
 
-            <!-- Technical subtitle -->
-            <p class="subtitle deep-content">The runtime orchestration layer that wraps an LLM API, implementing the agentic loop, tool dispatch, and state management required for autonomous operation.</p>
+        <!-- Technical subtitle -->
+        <p class="subtitle deep-content">
+          The runtime orchestration layer that wraps an LLM API, implementing
+          the agentic loop, tool dispatch, and state management required for
+          autonomous operation.
+        </p>
 
-            <!-- Simple View -->
-            <div class="simple-content">
-                <div class="comparison-grid">
-                    <div class="comparison-card llm-only">
-                        <div class="comparison-icon">🧠</div>
-                        <h3>LLM Alone</h3>
-                        <p class="comparison-metaphor">"A brain in a jar"</p>
-                        <ul>
-                            <li>Can think and respond</li>
-                            <li>Generates text only</li>
-                            <li>No world interaction</li>
-                            <li>Stateless between calls</li>
-                        </ul>
-                    </div>
-                    <div class="comparison-arrow">→</div>
-                    <div class="comparison-card with-harness">
-                        <div class="comparison-icon">🤖</div>
-                        <h3>LLM + Harness</h3>
-                        <p class="comparison-metaphor">"A fully equipped agent"</p>
-                        <ul>
-                            <li>Reads files, runs commands</li>
-                            <li>Searches the web</li>
-                            <li>Manages tasks & state</li>
-                            <li>Takes real-world actions</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- SVG Architecture Diagram -->
-                <div class="svg-diagram-container">
-                    <svg viewBox="0 0 800 400" class="architecture-svg">
-                        <!-- User Input -->
-                        <g class="svg-node user-input">
-                            <rect x="320" y="20" width="160" height="50" rx="25" fill="var(--bg-card)" stroke="var(--accent-purple)" stroke-width="2"/>
-                            <text x="400" y="50" text-anchor="middle" fill="var(--text-primary)" font-size="14" font-weight="500">User Input</text>
-                        </g>
-
-                        <!-- Arrow down -->
-                        <path d="M400 70 L400 95" stroke="var(--text-secondary)" stroke-width="2" marker-end="url(#arrowhead)"/>
-
-                        <!-- Harness Box -->
-                        <g class="svg-node harness-box">
-                            <rect x="100" y="100" width="600" height="180" rx="16" fill="var(--bg-card)" stroke="var(--accent-orange)" stroke-width="3"/>
-                            <text x="400" y="130" text-anchor="middle" fill="var(--accent-orange)" font-size="16" font-weight="700">AI HARNESS</text>
-
-                            <!-- Internal modules -->
-                            <g class="harness-modules">
-                                <rect x="130" y="150" width="120" height="60" rx="8" fill="var(--bg-dark)" stroke="var(--border)" stroke-width="1"/>
-                                <text x="190" y="175" text-anchor="middle" fill="var(--accent-cyan)" font-size="12" font-weight="600">query()</text>
-                                <text x="190" y="195" text-anchor="middle" fill="var(--text-secondary)" font-size="10">Agentic Loop</text>
-
-                                <rect x="270" y="150" width="120" height="60" rx="8" fill="var(--bg-dark)" stroke="var(--border)" stroke-width="1"/>
-                                <text x="330" y="175" text-anchor="middle" fill="var(--accent-cyan)" font-size="12" font-weight="600">Tool[]</text>
-                                <text x="330" y="195" text-anchor="middle" fill="var(--text-secondary)" font-size="10">Registry</text>
-
-                                <rect x="410" y="150" width="120" height="60" rx="8" fill="var(--bg-dark)" stroke="var(--border)" stroke-width="1"/>
-                                <text x="470" y="175" text-anchor="middle" fill="var(--accent-cyan)" font-size="12" font-weight="600">Context</text>
-                                <text x="470" y="195" text-anchor="middle" fill="var(--text-secondary)" font-size="10">Manager</text>
-
-                                <rect x="550" y="150" width="120" height="60" rx="8" fill="var(--bg-dark)" stroke="var(--border)" stroke-width="1"/>
-                                <text x="610" y="175" text-anchor="middle" fill="var(--accent-cyan)" font-size="12" font-weight="600">Permissions</text>
-                                <text x="610" y="195" text-anchor="middle" fill="var(--text-secondary)" font-size="10">Auth Layer</text>
-                            </g>
-
-                            <!-- Loop arrow inside harness -->
-                            <path d="M250 220 Q400 250 550 220" fill="none" stroke="var(--accent-orange)" stroke-width="2" stroke-dasharray="5,5"/>
-                            <text x="400" y="260" text-anchor="middle" fill="var(--text-secondary)" font-size="11">tool_use → execute → result → loop</text>
-                        </g>
-
-                        <!-- Arrow down to LLM -->
-                        <path d="M350 280 L350 310" stroke="var(--text-secondary)" stroke-width="2" marker-end="url(#arrowhead)"/>
-                        <text x="310" y="300" fill="var(--text-secondary)" font-size="10">messages</text>
-
-                        <!-- Arrow up from LLM -->
-                        <path d="M450 310 L450 280" stroke="var(--text-secondary)" stroke-width="2" marker-end="url(#arrowhead)"/>
-                        <text x="470" y="300" fill="var(--text-secondary)" font-size="10">stream</text>
-
-                        <!-- LLM API -->
-                        <g class="svg-node llm-api">
-                            <rect x="280" y="315" width="240" height="50" rx="25" fill="var(--bg-card)" stroke="var(--accent-cyan)" stroke-width="2"/>
-                            <text x="400" y="345" text-anchor="middle" fill="var(--text-primary)" font-size="14" font-weight="500">LLM API (Claude / GPT)</text>
-                        </g>
-
-                        <!-- Tool execution branch -->
-                        <g class="tool-branch">
-                            <path d="M700 190 L750 190 L750 100 L700 100" fill="none" stroke="var(--accent-purple)" stroke-width="2" stroke-dasharray="4,4"/>
-                            <rect x="720" y="120" width="70" height="50" rx="8" fill="var(--bg-card)" stroke="var(--accent-purple)" stroke-width="1"/>
-                            <text x="755" y="140" text-anchor="middle" fill="var(--accent-purple)" font-size="10" font-weight="600">Tools</text>
-                            <text x="755" y="155" text-anchor="middle" fill="var(--text-secondary)" font-size="8">Files, Shell</text>
-                            <text x="755" y="165" text-anchor="middle" fill="var(--text-secondary)" font-size="8">Web, MCP</text>
-                        </g>
-
-                        <!-- Arrow marker definition -->
-                        <defs>
-                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                                <polygon points="0 0, 10 3.5, 0 7" fill="var(--text-secondary)"/>
-                            </marker>
-                        </defs>
-                    </svg>
-                </div>
-
-                <div class="harness-responsibilities">
-                    <div class="responsibility"><span class="resp-icon">🔧</span><span class="resp-text">Tool Execution</span></div>
-                    <div class="responsibility"><span class="resp-icon">💬</span><span class="resp-text">Conversation Management</span></div>
-                    <div class="responsibility"><span class="resp-icon">🔒</span><span class="resp-text">Permission Control</span></div>
-                    <div class="responsibility"><span class="resp-icon">📊</span><span class="resp-text">Context Window</span></div>
-                    <div class="responsibility"><span class="resp-icon">⚡</span><span class="resp-text">Streaming & UI</span></div>
-                    <div class="responsibility"><span class="resp-icon">🔄</span><span class="resp-text">Error Recovery</span></div>
-                </div>
+        <!-- Simple View -->
+        <div class="hero-tags simple-content">
+          <div class="comparison-grid">
+            <div class="comparison-card llm-only">
+              <div class="comparison-icon">🧠</div>
+              <h3>LLM Alone</h3>
+              <p class="comparison-metaphor">"A brain in a jar"</p>
+              <ul>
+                <li>Can think and respond</li>
+                <li>Generates text only</li>
+                <li>No world interaction</li>
+                <li>Stateless between calls</li>
+              </ul>
             </div>
+            <div class="comparison-arrow">→</div>
+            <div class="comparison-card with-harness">
+              <div class="comparison-icon">🤖</div>
+              <h3>LLM + Harness</h3>
+              <p class="comparison-metaphor">"A fully equipped agent"</p>
+              <ul>
+                <li>Reads files, runs commands</li>
+                <li>Searches the web</li>
+                <li>Manages tasks & state</li>
+                <li>Takes real-world actions</li>
+              </ul>
+            </div>
+          </div>
 
-            <!-- Deep View -->
-            <div class="deep-content">
-                <!-- ASCII Architecture Diagram in Terminal -->
-                <div class="ascii-diagram-terminal">
-                    <div class="terminal-header">
-                        <span class="terminal-dot red"></span>
-                        <span class="terminal-dot yellow"></span>
-                        <span class="terminal-dot green"></span>
-                        <span class="terminal-title">harness-architecture.txt</span>
-                    </div>
-                    <div class="terminal-body ascii-body">
-<pre class="ascii-art">                          ┌─────────────────┐
+          <!-- SVG Architecture Diagram -->
+          <div class="svg-diagram-container">
+            <svg viewBox="0 0 800 400" class="architecture-svg">
+              <!-- User Input -->
+              <g class="svg-node user-input">
+                <rect
+                  x="320"
+                  y="20"
+                  width="160"
+                  height="50"
+                  rx="25"
+                  fill="var(--bg-card)"
+                  stroke="var(--accent-purple)"
+                  stroke-width="2"
+                />
+                <text
+                  x="400"
+                  y="50"
+                  text-anchor="middle"
+                  fill="var(--text-primary)"
+                  font-size="14"
+                  font-weight="500"
+                >
+                  User Input
+                </text>
+              </g>
+
+              <!-- Arrow down -->
+              <path
+                d="M400 70 L400 95"
+                stroke="var(--text-secondary)"
+                stroke-width="2"
+                marker-end="url(#arrowhead)"
+              />
+
+              <!-- Harness Box -->
+              <g class="svg-node harness-box">
+                <rect
+                  x="100"
+                  y="100"
+                  width="600"
+                  height="180"
+                  rx="16"
+                  fill="var(--bg-card)"
+                  stroke="var(--accent-orange)"
+                  stroke-width="3"
+                />
+                <text
+                  x="400"
+                  y="130"
+                  text-anchor="middle"
+                  fill="var(--accent-orange)"
+                  font-size="16"
+                  font-weight="700"
+                >
+                  AI HARNESS
+                </text>
+
+                <!-- Internal modules -->
+                <g class="harness-modules">
+                  <rect
+                    x="130"
+                    y="150"
+                    width="120"
+                    height="60"
+                    rx="8"
+                    fill="var(--bg-dark)"
+                    stroke="var(--border)"
+                    stroke-width="1"
+                  />
+                  <text
+                    x="190"
+                    y="175"
+                    text-anchor="middle"
+                    fill="var(--accent-cyan)"
+                    font-size="12"
+                    font-weight="600"
+                  >
+                    query()
+                  </text>
+                  <text
+                    x="190"
+                    y="195"
+                    text-anchor="middle"
+                    fill="var(--text-secondary)"
+                    font-size="10"
+                  >
+                    Agentic Loop
+                  </text>
+
+                  <rect
+                    x="270"
+                    y="150"
+                    width="120"
+                    height="60"
+                    rx="8"
+                    fill="var(--bg-dark)"
+                    stroke="var(--border)"
+                    stroke-width="1"
+                  />
+                  <text
+                    x="330"
+                    y="175"
+                    text-anchor="middle"
+                    fill="var(--accent-cyan)"
+                    font-size="12"
+                    font-weight="600"
+                  >
+                    Tool[]
+                  </text>
+                  <text
+                    x="330"
+                    y="195"
+                    text-anchor="middle"
+                    fill="var(--text-secondary)"
+                    font-size="10"
+                  >
+                    Registry
+                  </text>
+
+                  <rect
+                    x="410"
+                    y="150"
+                    width="120"
+                    height="60"
+                    rx="8"
+                    fill="var(--bg-dark)"
+                    stroke="var(--border)"
+                    stroke-width="1"
+                  />
+                  <text
+                    x="470"
+                    y="175"
+                    text-anchor="middle"
+                    fill="var(--accent-cyan)"
+                    font-size="12"
+                    font-weight="600"
+                  >
+                    Context
+                  </text>
+                  <text
+                    x="470"
+                    y="195"
+                    text-anchor="middle"
+                    fill="var(--text-secondary)"
+                    font-size="10"
+                  >
+                    Manager
+                  </text>
+
+                  <rect
+                    x="550"
+                    y="150"
+                    width="120"
+                    height="60"
+                    rx="8"
+                    fill="var(--bg-dark)"
+                    stroke="var(--border)"
+                    stroke-width="1"
+                  />
+                  <text
+                    x="610"
+                    y="175"
+                    text-anchor="middle"
+                    fill="var(--accent-cyan)"
+                    font-size="12"
+                    font-weight="600"
+                  >
+                    Permissions
+                  </text>
+                  <text
+                    x="610"
+                    y="195"
+                    text-anchor="middle"
+                    fill="var(--text-secondary)"
+                    font-size="10"
+                  >
+                    Auth Layer
+                  </text>
+                </g>
+
+                <!-- Loop arrow inside harness -->
+                <path
+                  d="M250 220 Q400 250 550 220"
+                  fill="none"
+                  stroke="var(--accent-orange)"
+                  stroke-width="2"
+                  stroke-dasharray="5,5"
+                />
+                <text
+                  x="400"
+                  y="260"
+                  text-anchor="middle"
+                  fill="var(--text-secondary)"
+                  font-size="11"
+                >
+                  tool_use → execute → result → loop
+                </text>
+              </g>
+
+              <!-- Arrow down to LLM -->
+              <path
+                d="M350 280 L350 310"
+                stroke="var(--text-secondary)"
+                stroke-width="2"
+                marker-end="url(#arrowhead)"
+              />
+              <text x="310" y="300" fill="var(--text-secondary)" font-size="10">
+                messages
+              </text>
+
+              <!-- Arrow up from LLM -->
+              <path
+                d="M450 310 L450 280"
+                stroke="var(--text-secondary)"
+                stroke-width="2"
+                marker-end="url(#arrowhead)"
+              />
+              <text x="470" y="300" fill="var(--text-secondary)" font-size="10">
+                stream
+              </text>
+
+              <!-- LLM API -->
+              <g class="svg-node llm-api">
+                <rect
+                  x="280"
+                  y="315"
+                  width="240"
+                  height="50"
+                  rx="25"
+                  fill="var(--bg-card)"
+                  stroke="var(--accent-cyan)"
+                  stroke-width="2"
+                />
+                <text
+                  x="400"
+                  y="345"
+                  text-anchor="middle"
+                  fill="var(--text-primary)"
+                  font-size="14"
+                  font-weight="500"
+                >
+                  LLM API (Claude / GPT)
+                </text>
+              </g>
+
+              <!-- Tool execution branch -->
+              <g class="tool-branch">
+                <path
+                  d="M700 190 L750 190 L750 100 L700 100"
+                  fill="none"
+                  stroke="var(--accent-purple)"
+                  stroke-width="2"
+                  stroke-dasharray="4,4"
+                />
+                <rect
+                  x="720"
+                  y="120"
+                  width="70"
+                  height="50"
+                  rx="8"
+                  fill="var(--bg-card)"
+                  stroke="var(--accent-purple)"
+                  stroke-width="1"
+                />
+                <text
+                  x="755"
+                  y="140"
+                  text-anchor="middle"
+                  fill="var(--accent-purple)"
+                  font-size="10"
+                  font-weight="600"
+                >
+                  Tools
+                </text>
+                <text
+                  x="755"
+                  y="155"
+                  text-anchor="middle"
+                  fill="var(--text-secondary)"
+                  font-size="8"
+                >
+                  Files, Shell
+                </text>
+                <text
+                  x="755"
+                  y="165"
+                  text-anchor="middle"
+                  fill="var(--text-secondary)"
+                  font-size="8"
+                >
+                  Web, MCP
+                </text>
+              </g>
+
+              <!-- Arrow marker definition -->
+              <defs>
+                <marker
+                  id="arrowhead"
+                  markerWidth="10"
+                  markerHeight="7"
+                  refX="9"
+                  refY="3.5"
+                  orient="auto"
+                >
+                  <polygon
+                    points="0 0, 10 3.5, 0 7"
+                    fill="var(--text-secondary)"
+                  />
+                </marker>
+              </defs>
+            </svg>
+          </div>
+
+          <div class="harness-responsibilities">
+            <div class="responsibility">
+              <span class="resp-icon">🔧</span
+              ><span class="resp-text">Tool Execution</span>
+            </div>
+            <div class="responsibility">
+              <span class="resp-icon">💬</span
+              ><span class="resp-text">Conversation Management</span>
+            </div>
+            <div class="responsibility">
+              <span class="resp-icon">🔒</span
+              ><span class="resp-text">Permission Control</span>
+            </div>
+            <div class="responsibility">
+              <span class="resp-icon">📊</span
+              ><span class="resp-text">Context Window</span>
+            </div>
+            <div class="responsibility">
+              <span class="resp-icon">⚡</span
+              ><span class="resp-text">Streaming & UI</span>
+            </div>
+            <div class="responsibility">
+              <span class="resp-icon">🔄</span
+              ><span class="resp-text">Error Recovery</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Deep View -->
+        <div class="deep-content">
+          <!-- ASCII Architecture Diagram in Terminal -->
+          <div class="ascii-diagram-terminal">
+            <div class="terminal-header">
+              <span class="terminal-dot red"></span>
+              <span class="terminal-dot yellow"></span>
+              <span class="terminal-dot green"></span>
+              <span class="terminal-title">harness-architecture.txt</span>
+            </div>
+            <div class="terminal-body ascii-body">
+              <pre
+                class="ascii-art"
+              >                          ┌─────────────────┐
                           │   User Input    │
                           │  (CLI / HTTP)   │
                           └────────┬────────┘
@@ -1317,22 +1737,25 @@
                     │  Claude / GPT   │
                     │   (stateless)   │
                     └─────────────────┘</pre>
-                    </div>
-                </div>
+            </div>
+          </div>
 
-                <div class="technical-details">
-                    <div class="tech-card">
-                        <h4>Without Harness</h4>
-                        <div class="code-snippet">
-                            <pre>response = llm.complete(prompt)
+          <div class="technical-details">
+            <div class="tech-card">
+              <h4>Without Harness</h4>
+              <div class="code-snippet">
+                <pre>
+response = llm.complete(prompt)
 # Returns text. That's it.
-# No memory, no actions, no tools.</pre>
-                        </div>
-                    </div>
-                    <div class="tech-card">
-                        <h4>With Harness</h4>
-                        <div class="code-snippet">
-                            <pre>while (true) {
+# No memory, no actions, no tools.</pre
+                >
+              </div>
+            </div>
+            <div class="tech-card">
+              <h4>With Harness</h4>
+              <div class="code-snippet">
+                <pre>
+while (true) {
   response = llm.complete(messages, tools)
   if (response.tool_use) {
     result = executeTool(response.tool_use)
@@ -1340,64 +1763,96 @@
     continue  // Loop back to LLM
   }
   return response  // Done
-}</pre>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="core-contracts">
-                    <h4>Core Contracts</h4>
-                    <div class="contracts-grid">
-                        <div class="contract">
-                            <code>Tool</code>
-                            <span>inputSchema (Zod) → call() → ToolResult</span>
-                        </div>
-                        <div class="contract">
-                            <code>Message</code>
-                            <span>user | assistant | tool_use | tool_result</span>
-                        </div>
-                        <div class="contract">
-                            <code>Permission</code>
-                            <span>tool × action → allow | deny | ask</span>
-                        </div>
-                        <div class="contract">
-                            <code>Context</code>
-                            <span>system + messages → compact() when > threshold</span>
-                        </div>
-                    </div>
-                </div>
+}</pre
+                >
+              </div>
             </div>
+          </div>
+
+          <div class="core-contracts">
+            <h4>Core Contracts</h4>
+            <div class="contracts-grid">
+              <div class="contract">
+                <code>Tool</code>
+                <span>inputSchema (Zod) → call() → ToolResult</span>
+              </div>
+              <div class="contract">
+                <code>Message</code>
+                <span>user | assistant | tool_use | tool_result</span>
+              </div>
+              <div class="contract">
+                <code>Permission</code>
+                <span>tool × action → allow | deny | ask</span>
+              </div>
+              <div class="contract">
+                <code>Context</code>
+                <span>system + messages → compact() when > threshold</span>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </section>
 
     <!-- Query Loop Section -->
     <section id="query-loop" class="slide">
-        <div class="slide-number">02</div>
-        <div class="slide-content">
-            <h2>The Core Query Loop</h2>
-            <p class="subtitle simple-content">The heart of the agentic system — a while(true) loop that continues until the model stops requesting tools.</p>
-            <p class="subtitle deep-content">An async generator implementing the ReAct pattern: Reason → Act → Observe → Repeat. Returns <code>AsyncGenerator&lt;Message&gt;</code> for streaming.</p>
+      <div class="slide-number">02</div>
+      <div class="slide-content">
+        <h2>The Core Query Loop</h2>
+        <p class="subtitle simple-content">
+          The heart of the agentic system — a while(true) loop that continues
+          until the model stops requesting tools.
+        </p>
+        <p class="subtitle deep-content">
+          An async generator implementing the ReAct pattern: Reason → Act →
+          Observe → Repeat. Returns
+          <code>AsyncGenerator&lt;Message&gt;</code> for streaming.
+        </p>
 
-            <!-- Simple View -->
-            <div class="simple-content">
-                <div class="diagram">
-                    <div class="flow-container">
-                        <div class="flow-step"><div class="step-icon">💬</div><div class="step-content"><h3>User Message</h3><p>Input enters</p></div></div>
-                        <div class="flow-arrow">→</div>
-                        <div class="flow-step active"><div class="step-icon">🤖</div><div class="step-content"><h3>Model Call</h3><p>Stream chunks</p></div></div>
-                        <div class="flow-arrow">→</div>
-                        <div class="flow-step"><div class="step-icon">🔍</div><div class="step-content"><h3>Check Tools</h3><p>Detect tool_use</p></div></div>
-                        <div class="flow-arrow">→</div>
-                        <div class="flow-step"><div class="step-icon">⚡</div><div class="step-content"><h3>Execute</h3><p>Run in parallel</p></div></div>
-                        <div class="flow-arrow loop">↺</div>
-                    </div>
+        <!-- Simple View -->
+        <div class="simple-content">
+          <div class="diagram">
+            <div class="flow-container">
+              <div class="flow-step">
+                <div class="step-icon">💬</div>
+                <div class="step-content">
+                  <h3>User Message</h3>
+                  <p>Input enters</p>
                 </div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step active">
+                <div class="step-icon">🤖</div>
+                <div class="step-content">
+                  <h3>Model Call</h3>
+                  <p>Stream chunks</p>
+                </div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <div class="step-icon">🔍</div>
+                <div class="step-content">
+                  <h3>Check Tools</h3>
+                  <p>Detect tool_use</p>
+                </div>
+              </div>
+              <div class="flow-arrow">→</div>
+              <div class="flow-step">
+                <div class="step-icon">⚡</div>
+                <div class="step-content">
+                  <h3>Execute</h3>
+                  <p>Run in parallel</p>
+                </div>
+              </div>
+              <div class="flow-arrow loop">↺</div>
             </div>
+          </div>
+        </div>
 
-            <!-- Deep View -->
-            <div class="deep-content">
-                <div class="deep-code">
-                    <pre><span class="keyword">async function*</span> <span class="function">query</span>(
+        <!-- Deep View -->
+        <div class="deep-content">
+          <div class="deep-code">
+            <pre><span class="keyword">async function*</span> <span class="function">query</span>(
   messages: <span class="type">Message[]</span>,
   options: <span class="type">QueryOptions</span>
 ): <span class="type">AsyncGenerator&lt;Message, QueryResult&gt;</span> {
@@ -1438,57 +1893,110 @@
     messages.push(...results)
   }
 }</pre>
-                </div>
+          </div>
 
-                <div class="tech-annotation">
-                    <strong>Key Implementation Details:</strong>
-                    <ul style="margin:0; padding-left:1.5rem; color: var(--text-secondary);">
-                        <li><code>AsyncGenerator</code> enables backpressure — consumer controls iteration pace</li>
-                        <li><code>yield</code> streams each chunk; <code>return</code> provides final metadata</li>
-                        <li>Tool execution is parallel via <code>Promise.all</code> but respects dependency ordering</li>
-                        <li>Compaction uses a separate model call to summarize old messages</li>
-                    </ul>
-                </div>
+          <div class="tech-annotation">
+            <strong>Key Implementation Details:</strong>
+            <ul
+              style="
+                margin: 0;
+                padding-left: 1.5rem;
+                color: var(--text-secondary);
+              "
+            >
+              <li>
+                <code>AsyncGenerator</code> enables backpressure — consumer
+                controls iteration pace
+              </li>
+              <li>
+                <code>yield</code> streams each chunk;
+                <code>return</code> provides final metadata
+              </li>
+              <li>
+                Tool execution is parallel via <code>Promise.all</code> but
+                respects dependency ordering
+              </li>
+              <li>
+                Compaction uses a separate model call to summarize old messages
+              </li>
+            </ul>
+          </div>
 
-                <div class="implementation-note">
-                    <strong>File:</strong> <code>src/core/query.ts</code> — The entire agentic behavior is ~200 lines.
-                    Recovery logic handles <code>max_output_tokens</code>, <code>rate_limit</code>, and <code>prompt_too_long</code> errors with exponential backoff.
-                </div>
-            </div>
+          <div class="implementation-note">
+            <strong>File:</strong> <code>src/core/query.ts</code> — The entire
+            agentic behavior is ~200 lines. Recovery logic handles
+            <code>max_output_tokens</code>, <code>rate_limit</code>, and
+            <code>prompt_too_long</code> errors with exponential backoff.
+          </div>
         </div>
+      </div>
     </section>
 
     <!-- Tools Section -->
     <section id="tools" class="slide">
-        <div class="slide-number">03</div>
-        <div class="slide-content">
-            <h2>Tool System Architecture</h2>
-            <p class="subtitle simple-content">Each tool is a self-contained module with schema validation, permission checks, and rendering capabilities.</p>
-            <p class="subtitle deep-content">Tools implement the <code>Tool&lt;TInput, TOutput&gt;</code> interface. Input validated via Zod schemas, output wrapped in <code>ToolResult</code> for model consumption.</p>
+      <div class="slide-number">03</div>
+      <div class="slide-content">
+        <h2>Tool System Architecture</h2>
+        <p class="subtitle simple-content">
+          Each tool is a self-contained module with schema validation,
+          permission checks, and rendering capabilities.
+        </p>
+        <p class="subtitle deep-content">
+          Tools implement the
+          <code>Tool&lt;TInput, TOutput&gt;</code> interface. Input validated
+          via Zod schemas, output wrapped in <code>ToolResult</code> for model
+          consumption.
+        </p>
 
-            <!-- Simple View -->
-            <div class="simple-content">
-                <div class="tools-grid">
-                    <div class="tool-card"><div class="tool-icon">📁</div><h3>File Operations</h3><p>FileReadTool, FileEditTool, FileWriteTool</p></div>
-                    <div class="tool-card"><div class="tool-icon">💻</div><h3>Shell</h3><p>BashTool, PowerShellTool</p></div>
-                    <div class="tool-card"><div class="tool-icon">🔎</div><h3>Search</h3><p>GlobTool, GrepTool, WebSearchTool</p></div>
-                    <div class="tool-card"><div class="tool-icon">🤖</div><h3>Agents</h3><p>AgentTool, TaskCreateTool</p></div>
-                    <div class="tool-card"><div class="tool-icon">🌐</div><h3>External</h3><p>WebFetchTool, MCP Tools</p></div>
-                    <div class="tool-card"><div class="tool-icon">🔧</div><h3>Custom</h3><p>Skills, Plugins, Extensions</p></div>
-                </div>
-                <div class="tool-flow">
-                    <div class="flow-item">Parse Input<span>Zod Schema</span></div>
-                    <div class="flow-item">Validate<span>validateInput()</span></div>
-                    <div class="flow-item">Permission<span>checkPermissions()</span></div>
-                    <div class="flow-item">Execute<span>call()</span></div>
-                    <div class="flow-item">Format<span>mapToResult()</span></div>
-                </div>
+        <!-- Simple View -->
+        <div class="simple-content">
+          <div class="tools-grid">
+            <div class="tool-card">
+              <div class="tool-icon">📁</div>
+              <h3>File Operations</h3>
+              <p>FileReadTool, FileEditTool, FileWriteTool</p>
             </div>
+            <div class="tool-card">
+              <div class="tool-icon">💻</div>
+              <h3>Shell</h3>
+              <p>BashTool, PowerShellTool</p>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon">🔎</div>
+              <h3>Search</h3>
+              <p>GlobTool, GrepTool, WebSearchTool</p>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon">🤖</div>
+              <h3>Agents</h3>
+              <p>AgentTool, TaskCreateTool</p>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon">🌐</div>
+              <h3>External</h3>
+              <p>WebFetchTool, MCP Tools</p>
+            </div>
+            <div class="tool-card">
+              <div class="tool-icon">🔧</div>
+              <h3>Custom</h3>
+              <p>Skills, Plugins, Extensions</p>
+            </div>
+          </div>
+          <div class="tool-flow">
+            <div class="flow-item">Parse Input<span>Zod Schema</span></div>
+            <div class="flow-item">Validate<span>validateInput()</span></div>
+            <div class="flow-item">
+              Permission<span>checkPermissions()</span>
+            </div>
+            <div class="flow-item">Execute<span>call()</span></div>
+            <div class="flow-item">Format<span>mapToResult()</span></div>
+          </div>
+        </div>
 
-            <!-- Deep View -->
-            <div class="deep-content">
-                <div class="deep-code">
-                    <pre><span class="keyword">interface</span> <span class="type">Tool</span>&lt;<span class="type">TInput</span>, <span class="type">TOutput</span>&gt; {
+        <!-- Deep View -->
+        <div class="deep-content">
+          <div class="deep-code">
+            <pre><span class="keyword">interface</span> <span class="type">Tool</span>&lt;<span class="type">TInput</span>, <span class="type">TOutput</span>&gt; {
   <span class="comment">// Identity & Discovery</span>
   name: <span class="type">string</span>                           <span class="comment">// Unique identifier for tool_use blocks</span>
   description: <span class="type">string</span>                    <span class="comment">// Shown to model in system prompt</span>
@@ -1514,57 +2022,94 @@
   <span class="function">renderToolUse</span>(input: <span class="type">TInput</span>): <span class="type">ReactNode</span>
   <span class="function">renderToolResult</span>(result: <span class="type">TOutput</span>): <span class="type">ReactNode</span>
 }</pre>
-                </div>
+          </div>
 
-                <div class="contracts-grid" style="margin-top:1.5rem;">
-                    <div class="contract">
-                        <code>ToolUseContext</code>
-                        <span>abortSignal, readState, getEnv, options, workingDir</span>
-                    </div>
-                    <div class="contract">
-                        <code>ToolResult</code>
-                        <span>{ type, content: TextBlock | ImageBlock, is_error? }</span>
-                    </div>
-                    <div class="contract">
-                        <code>inputSchema</code>
-                        <span>Zod → JSON Schema via zod-to-json-schema at build time</span>
-                    </div>
-                    <div class="contract">
-                        <code>MCP Tools</code>
-                        <span>Dynamic registration via Model Context Protocol servers</span>
-                    </div>
-                </div>
-
-                <div class="implementation-note">
-                    <strong>Tool Registration:</strong> Tools are collected in <code>getTools()</code> which filters by feature flags and permission mode.
-                    MCP tools are dynamically fetched from external servers and wrapped in the same interface.
-                </div>
+          <div class="contracts-grid" style="margin-top: 1.5rem">
+            <div class="contract">
+              <code>ToolUseContext</code>
+              <span>abortSignal, readState, getEnv, options, workingDir</span>
             </div>
+            <div class="contract">
+              <code>ToolResult</code>
+              <span>{ type, content: TextBlock | ImageBlock, is_error? }</span>
+            </div>
+            <div class="contract">
+              <code>inputSchema</code>
+              <span
+                >Zod → JSON Schema via zod-to-json-schema at build time</span
+              >
+            </div>
+            <div class="contract">
+              <code>MCP Tools</code>
+              <span
+                >Dynamic registration via Model Context Protocol servers</span
+              >
+            </div>
+          </div>
+
+          <div class="implementation-note">
+            <strong>Tool Registration:</strong> Tools are collected in
+            <code>getTools()</code> which filters by feature flags and
+            permission mode. MCP tools are dynamically fetched from external
+            servers and wrapped in the same interface.
+          </div>
         </div>
+      </div>
     </section>
 
     <!-- Permissions Section -->
     <section id="permissions" class="slide">
-        <div class="slide-number">04</div>
-        <div class="slide-content">
-            <h2>Permission System</h2>
-            <p class="subtitle simple-content">Defense in depth — multiple layers ensure safety with configurable permission modes.</p>
-            <p class="subtitle deep-content">Multi-layer permission checking: <code>PermissionMode</code> → <code>tool.needsPermission()</code> → <code>canUseTool()</code> hook → user confirmation UI.</p>
+      <div class="slide-number">04</div>
+      <div class="slide-content">
+        <h2>Permission System</h2>
+        <p class="subtitle simple-content">
+          Defense in depth — multiple layers ensure safety with configurable
+          permission modes.
+        </p>
+        <p class="subtitle deep-content">
+          Multi-layer permission checking: <code>PermissionMode</code> →
+          <code>tool.needsPermission()</code> → <code>canUseTool()</code> hook →
+          user confirmation UI.
+        </p>
 
-            <!-- Simple View -->
-            <div class="simple-content">
-                <div class="permissions-grid">
-                    <div class="permission-card default"><div class="permission-header"><span class="mode-badge">default</span><h3>Ask Mode</h3></div><p>Prompts user for dangerous operations.</p></div>
-                    <div class="permission-card auto"><div class="permission-header"><span class="mode-badge">auto</span><h3>YOLO Mode</h3></div><p>Auto-approve with ML classifier.</p></div>
-                    <div class="permission-card plan"><div class="permission-header"><span class="mode-badge">plan</span><h3>Read-Only</h3></div><p>No writes allowed.</p></div>
-                    <div class="permission-card bypass"><div class="permission-header"><span class="mode-badge">bypass</span><h3>Trust All</h3></div><p>Allow everything.</p></div>
-                </div>
+        <!-- Simple View -->
+        <div class="simple-content">
+          <div class="permissions-grid">
+            <div class="permission-card default">
+              <div class="permission-header">
+                <span class="mode-badge">default</span>
+                <h3>Ask Mode</h3>
+              </div>
+              <p>Prompts user for dangerous operations.</p>
             </div>
+            <div class="permission-card auto">
+              <div class="permission-header">
+                <span class="mode-badge">auto</span>
+                <h3>YOLO Mode</h3>
+              </div>
+              <p>Auto-approve with ML classifier.</p>
+            </div>
+            <div class="permission-card plan">
+              <div class="permission-header">
+                <span class="mode-badge">plan</span>
+                <h3>Read-Only</h3>
+              </div>
+              <p>No writes allowed.</p>
+            </div>
+            <div class="permission-card bypass">
+              <div class="permission-header">
+                <span class="mode-badge">bypass</span>
+                <h3>Trust All</h3>
+              </div>
+              <p>Allow everything.</p>
+            </div>
+          </div>
+        </div>
 
-            <!-- Deep View -->
-            <div class="deep-content">
-                <div class="deep-code">
-                    <pre><span class="keyword">type</span> <span class="type">PermissionMode</span> = <span class="string">'default'</span> | <span class="string">'plan'</span> | <span class="string">'auto'</span> | <span class="string">'bypass'</span>
+        <!-- Deep View -->
+        <div class="deep-content">
+          <div class="deep-code">
+            <pre><span class="keyword">type</span> <span class="type">PermissionMode</span> = <span class="string">'default'</span> | <span class="string">'plan'</span> | <span class="string">'auto'</span> | <span class="string">'bypass'</span>
 
 <span class="keyword">type</span> <span class="type">CanUseTool</span> = (
   tool: <span class="type">Tool</span>,
@@ -1590,57 +2135,90 @@
   <span class="comment">// Layer 4: User confirmation UI (blocks until response)</span>
   <span class="keyword">return await</span> showPermissionDialog(tool, input)
 }</pre>
-                </div>
+          </div>
 
-                <div class="contracts-grid" style="margin-top:1.5rem;">
-                    <div class="contract">
-                        <code>isReadOnly()</code>
-                        <span>FileReadTool: true, BashTool: false, GrepTool: true</span>
-                    </div>
-                    <div class="contract">
-                        <code>needsPermission()</code>
-                        <span>Dynamic check — BashTool checks for rm, sudo, etc.</span>
-                    </div>
-                    <div class="contract">
-                        <code>allowlist</code>
-                        <span>User-configured patterns: "allow npm test", "deny rm -rf"</span>
-                    </div>
-                    <div class="contract">
-                        <code>session cache</code>
-                        <span>Once approved, similar operations auto-allowed for session</span>
-                    </div>
-                </div>
+          <div class="contracts-grid" style="margin-top: 1.5rem">
+            <div class="contract">
+              <code>isReadOnly()</code>
+              <span>FileReadTool: true, BashTool: false, GrepTool: true</span>
             </div>
+            <div class="contract">
+              <code>needsPermission()</code>
+              <span>Dynamic check — BashTool checks for rm, sudo, etc.</span>
+            </div>
+            <div class="contract">
+              <code>allowlist</code>
+              <span
+                >User-configured patterns: "allow npm test", "deny rm -rf"</span
+              >
+            </div>
+            <div class="contract">
+              <code>session cache</code>
+              <span
+                >Once approved, similar operations auto-allowed for
+                session</span
+              >
+            </div>
+          </div>
         </div>
+      </div>
     </section>
 
     <!-- Context Section -->
     <section id="context" class="slide">
-        <div class="slide-number">05</div>
-        <div class="slide-content">
-            <h2>Context Management</h2>
-            <p class="subtitle simple-content">Managing the ~200K token context window with auto-compaction and smart truncation.</p>
-            <p class="subtitle deep-content">Token budget management via <code>tiktoken</code>. Auto-compaction at 90% capacity. Microcompaction for large tool outputs via temp file references.</p>
+      <div class="slide-number">05</div>
+      <div class="slide-content">
+        <h2>Context Management</h2>
+        <p class="subtitle simple-content">
+          Managing the ~200K token context window with auto-compaction and smart
+          truncation.
+        </p>
+        <p class="subtitle deep-content">
+          Token budget management via <code>tiktoken</code>. Auto-compaction at
+          90% capacity. Microcompaction for large tool outputs via temp file
+          references.
+        </p>
 
-            <!-- Simple View -->
-            <div class="simple-content">
-                <div class="context-layers">
-                    <div class="layer system-prompt"><span class="layer-label">System Prompt</span><span class="layer-desc">Instructions & capabilities</span></div>
-                    <div class="layer user-context"><span class="layer-label">User Context</span><span class="layer-desc">CLAUDE.md, date, environment</span></div>
-                    <div class="layer system-context"><span class="layer-label">System Context</span><span class="layer-desc">Git status, working directory</span></div>
-                    <div class="layer conversation"><span class="layer-label">Conversation History</span><span class="layer-desc">Compacted when needed</span></div>
-                    <div class="layer tool-results"><span class="layer-label">Tool Results</span><span class="layer-desc">Truncated if too large</span></div>
-                </div>
-                <div class="compaction-info">
-                    <div class="info-card"><h4>Auto-Compaction</h4><p>When tokens exceed ~180K, old messages are summarized</p></div>
-                    <div class="info-card"><h4>Microcompaction</h4><p>Large outputs saved to temp files with truncated preview</p></div>
-                </div>
+        <!-- Simple View -->
+        <div class="simple-content">
+          <div class="context-layers">
+            <div class="layer system-prompt">
+              <span class="layer-label">System Prompt</span
+              ><span class="layer-desc">Instructions & capabilities</span>
             </div>
+            <div class="layer user-context">
+              <span class="layer-label">User Context</span
+              ><span class="layer-desc">CLAUDE.md, date, environment</span>
+            </div>
+            <div class="layer system-context">
+              <span class="layer-label">System Context</span
+              ><span class="layer-desc">Git status, working directory</span>
+            </div>
+            <div class="layer conversation">
+              <span class="layer-label">Conversation History</span
+              ><span class="layer-desc">Compacted when needed</span>
+            </div>
+            <div class="layer tool-results">
+              <span class="layer-label">Tool Results</span
+              ><span class="layer-desc">Truncated if too large</span>
+            </div>
+          </div>
+          <div class="compaction-info">
+            <div class="info-card">
+              <h4>Auto-Compaction</h4>
+              <p>When tokens exceed ~180K, old messages are summarized</p>
+            </div>
+            <div class="info-card">
+              <h4>Microcompaction</h4>
+              <p>Large outputs saved to temp files with truncated preview</p>
+            </div>
+          </div>
+        </div>
 
-            <!-- Deep View -->
-            <div class="deep-content">
-                <div class="deep-code">
-                    <pre><span class="keyword">const</span> MAX_TOKENS = 200_000
+        <!-- Deep View -->
+        <div class="deep-content">
+          <div class="deep-code">
+            <pre><span class="keyword">const</span> MAX_TOKENS = 200_000
 <span class="keyword">const</span> COMPACT_THRESHOLD = 0.9 * MAX_TOKENS  <span class="comment">// ~180K</span>
 <span class="keyword">const</span> MICROCOMPACT_THRESHOLD = 50_000       <span class="comment">// Per-message limit</span>
 
@@ -1674,41 +2252,70 @@
              <span class="string">`\n\n[Full output: ${tempPath}]`</span>
   }
 }</pre>
-                </div>
+          </div>
 
-                <div class="implementation-note">
-                    <strong>Token Counting:</strong> Uses <code>tiktoken</code> (OpenAI's tokenizer) with cl100k_base encoding.
-                    System prompt ~8K tokens, leaving ~192K for conversation. Images counted as fixed token cost per dimension.
-                </div>
-            </div>
+          <div class="implementation-note">
+            <strong>Token Counting:</strong> Uses
+            <code>tiktoken</code> (OpenAI's tokenizer) with cl100k_base
+            encoding. System prompt ~8K tokens, leaving ~192K for conversation.
+            Images counted as fixed token cost per dimension.
+          </div>
         </div>
+      </div>
     </section>
 
     <!-- Patterns Section -->
     <section id="patterns" class="slide">
-        <div class="slide-number">06</div>
-        <div class="slide-content">
-            <h2>Key Architectural Patterns</h2>
-            <p class="subtitle simple-content">Battle-tested patterns from years of production AI system iteration.</p>
-            <p class="subtitle deep-content">Production patterns for async control flow, error recovery, and extensibility in long-running agent processes.</p>
+      <div class="slide-number">06</div>
+      <div class="slide-content">
+        <h2>Key Architectural Patterns</h2>
+        <p class="subtitle simple-content">
+          Battle-tested patterns from years of production AI system iteration.
+        </p>
+        <p class="subtitle deep-content">
+          Production patterns for async control flow, error recovery, and
+          extensibility in long-running agent processes.
+        </p>
 
-            <!-- Simple View -->
-            <div class="simple-content">
-                <div class="patterns-grid">
-                    <div class="pattern-card"><div class="pattern-icon">🌊</div><h3>Generator-Based Streaming</h3><p>Async generators yield messages as they arrive.</p><code>async function* query(): AsyncGenerator&lt;Message&gt;</code></div>
-                    <div class="pattern-card"><div class="pattern-icon">🧵</div><h3>Context Threading</h3><p>ToolUseContext carries state through call stack.</p><code>tool.call(input, context, canUseTool)</code></div>
-                    <div class="pattern-card"><div class="pattern-icon">🔄</div><h3>Recovery Patterns</h3><p>Multi-level recovery for API errors.</p><code>for (const strategy of recoveryStrategies)</code></div>
-                    <div class="pattern-card"><div class="pattern-icon">🎛️</div><h3>Feature Flags</h3><p>Compile-time elimination of unused features.</p><code>feature('FLAG') ? require('./Tool') : null</code></div>
-                </div>
+        <!-- Simple View -->
+        <div class="simple-content">
+          <div class="patterns-grid">
+            <div class="pattern-card">
+              <div class="pattern-icon">🌊</div>
+              <h3>Generator-Based Streaming</h3>
+              <p>Async generators yield messages as they arrive.</p>
+              <code
+                >async function* query(): AsyncGenerator&lt;Message&gt;</code
+              >
             </div>
+            <div class="pattern-card">
+              <div class="pattern-icon">🧵</div>
+              <h3>Context Threading</h3>
+              <p>ToolUseContext carries state through call stack.</p>
+              <code>tool.call(input, context, canUseTool)</code>
+            </div>
+            <div class="pattern-card">
+              <div class="pattern-icon">🔄</div>
+              <h3>Recovery Patterns</h3>
+              <p>Multi-level recovery for API errors.</p>
+              <code>for (const strategy of recoveryStrategies)</code>
+            </div>
+            <div class="pattern-card">
+              <div class="pattern-icon">🎛️</div>
+              <h3>Feature Flags</h3>
+              <p>Compile-time elimination of unused features.</p>
+              <code>feature('FLAG') ? require('./Tool') : null</code>
+            </div>
+          </div>
+        </div>
 
-            <!-- Deep View -->
-            <div class="deep-content">
-                <div class="patterns-grid">
-                    <div class="pattern-card">
-                        <h3>🌊 Generator-Based Streaming</h3>
-                        <div class="deep-code" style="margin:1rem 0;">
-                            <pre><span class="comment">// Consumer controls backpressure</span>
+        <!-- Deep View -->
+        <div class="deep-content">
+          <div class="patterns-grid">
+            <div class="pattern-card">
+              <h3>🌊 Generator-Based Streaming</h3>
+              <div class="deep-code" style="margin: 1rem 0">
+                <pre><span class="comment">// Consumer controls backpressure</span>
 <span class="keyword">for await</span> (<span class="keyword">const</span> msg <span class="keyword">of</span> query(messages)) {
   <span class="keyword">if</span> (aborted) <span class="keyword">break</span>  <span class="comment">// Clean cancellation</span>
   render(msg)
@@ -1720,13 +2327,16 @@ query(messages, {
   onDone: () => {},
   onError: (e) => {}
 })</pre>
-                        </div>
-                        <span style="font-size:0.85rem;color:var(--text-secondary);">Backpressure-aware. Iterator controls pace. Cancellation via break.</span>
-                    </div>
-                    <div class="pattern-card">
-                        <h3>🧵 Context Threading</h3>
-                        <div class="deep-code" style="margin:1rem 0;">
-                            <pre><span class="keyword">interface</span> <span class="type">ToolUseContext</span> {
+              </div>
+              <span style="font-size: 0.85rem; color: var(--text-secondary)"
+                >Backpressure-aware. Iterator controls pace. Cancellation via
+                break.</span
+              >
+            </div>
+            <div class="pattern-card">
+              <h3>🧵 Context Threading</h3>
+              <div class="deep-code" style="margin: 1rem 0">
+                <pre><span class="keyword">interface</span> <span class="type">ToolUseContext</span> {
   abortSignal: <span class="type">AbortSignal</span>
   readState: <span class="type">() => State</span>
   getEnv: <span class="type">(key: string) => string</span>
@@ -1736,13 +2346,16 @@ query(messages, {
 
 <span class="comment">// Passed through entire call stack</span>
 <span class="comment">// No global state, fully testable</span></pre>
-                        </div>
-                        <span style="font-size:0.85rem;color:var(--text-secondary);">Dependency injection pattern. Enables testing without mocks.</span>
-                    </div>
-                    <div class="pattern-card">
-                        <h3>🔄 Error Recovery</h3>
-                        <div class="deep-code" style="margin:1rem 0;">
-                            <pre><span class="keyword">const</span> strategies = [
+              </div>
+              <span style="font-size: 0.85rem; color: var(--text-secondary)"
+                >Dependency injection pattern. Enables testing without
+                mocks.</span
+              >
+            </div>
+            <div class="pattern-card">
+              <h3>🔄 Error Recovery</h3>
+              <div class="deep-code" style="margin: 1rem 0">
+                <pre><span class="keyword">const</span> strategies = [
   { error: <span class="string">'rate_limit'</span>,
     action: exponentialBackoff },
   { error: <span class="string">'max_output_tokens'</span>,
@@ -1755,13 +2368,16 @@ query(messages, {
   <span class="keyword">if</span> (s.error === err.type)
     <span class="keyword">return</span> s.action(err)
 }</pre>
-                        </div>
-                        <span style="font-size:0.85rem;color:var(--text-secondary);">Chain of responsibility. Each error type has specific recovery.</span>
-                    </div>
-                    <div class="pattern-card">
-                        <h3>🔌 MCP Integration</h3>
-                        <div class="deep-code" style="margin:1rem 0;">
-                            <pre><span class="comment">// Model Context Protocol</span>
+              </div>
+              <span style="font-size: 0.85rem; color: var(--text-secondary)"
+                >Chain of responsibility. Each error type has specific
+                recovery.</span
+              >
+            </div>
+            <div class="pattern-card">
+              <h3>🔌 MCP Integration</h3>
+              <div class="deep-code" style="margin: 1rem 0">
+                <pre><span class="comment">// Model Context Protocol</span>
 <span class="keyword">const</span> mcpTools = <span class="keyword">await</span> mcpClient
   .connect(<span class="string">'stdio://server'</span>)
   .listTools()
@@ -1772,431 +2388,594 @@ mcpTools.map(t => ({
   call: (input) =>
     mcpClient.callTool(t.name, input)
 }))</pre>
-                        </div>
-                        <span style="font-size:0.85rem;color:var(--text-secondary);">External tools via JSON-RPC. Same interface as built-in tools.</span>
-                    </div>
-                </div>
+              </div>
+              <span style="font-size: 0.85rem; color: var(--text-secondary)"
+                >External tools via JSON-RPC. Same interface as built-in
+                tools.</span
+              >
             </div>
+          </div>
         </div>
+      </div>
     </section>
 
     <!-- Summary Section -->
     <section id="summary" class="slide summary-slide">
-        <div class="slide-number">∞</div>
-        <div class="slide-content">
-            <h2>Building Your Own Harness</h2>
-            <p class="subtitle">Essential components and design principles for production AI agents.</p>
-            <div class="summary-grid">
-                <div class="summary-column">
-                    <h4>Essential Components</h4>
-                    <ul>
-                        <li>Query Loop — The agentic cycle</li>
-                        <li>Tool System — Unified interface</li>
-                        <li>Permission Layer — Safety by default</li>
-                        <li>Context Management — Token limits</li>
-                        <li>Streaming Architecture — Real-time</li>
-                        <li>Recovery Mechanisms — Graceful failures</li>
-                    </ul>
-                </div>
-                <div class="summary-column">
-                    <h4>Design Principles</h4>
-                    <ul>
-                        <li>Streaming-first — Immediate feedback</li>
-                        <li>Defense in depth — Multiple layers</li>
-                        <li>Fail safely — Preserve state</li>
-                        <li>Extensibility — Skills, plugins, MCP</li>
-                        <li>Observability — Logs, metrics, traces</li>
-                        <li>Type safety — TypeScript + Zod</li>
-                    </ul>
-                </div>
-            </div>
-            <div class="final-note">
-                <p>This harness represents years of iteration on production AI systems.<br>The patterns here are battle-tested with millions of users.</p>
-            </div>
+      <div class="slide-number">∞</div>
+      <div class="slide-content">
+        <h2>Building Your Own Harness</h2>
+        <p class="subtitle">
+          Essential components and design principles for production AI agents.
+        </p>
+        <div class="summary-grid">
+          <div class="summary-column">
+            <h4>Essential Components</h4>
+            <ul>
+              <li>Query Loop — The agentic cycle</li>
+              <li>Tool System — Unified interface</li>
+              <li>Permission Layer — Safety by default</li>
+              <li>Context Management — Token limits</li>
+              <li>Streaming Architecture — Real-time</li>
+              <li>Recovery Mechanisms — Graceful failures</li>
+            </ul>
+          </div>
+          <div class="summary-column">
+            <h4>Design Principles</h4>
+            <ul>
+              <li>Streaming-first — Immediate feedback</li>
+              <li>Defense in depth — Multiple layers</li>
+              <li>Fail safely — Preserve state</li>
+              <li>Extensibility — Skills, plugins, MCP</li>
+              <li>Observability — Logs, metrics, traces</li>
+              <li>Type safety — TypeScript + Zod</li>
+            </ul>
+          </div>
         </div>
+        <div class="final-note">
+          <p>
+            This harness represents years of iteration on production AI
+            systems.<br />The patterns here are battle-tested with millions of
+            users.
+          </p>
+        </div>
+      </div>
     </section>
 
     <style>
-        /* Diagram Styles */
-        .diagram { margin: 2rem 0; }
+      /* Diagram Styles */
+      .diagram {
+        margin: 2rem 0;
+      }
 
-        .flow-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            padding: 2rem;
-            background: var(--bg-card);
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            overflow-x: auto;
+      .flow-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 2rem;
+        background: var(--bg-card);
+        border-radius: 20px;
+        border: 1px solid var(--border);
+        overflow-x: auto;
+      }
+
+      .flow-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1.5rem;
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        min-width: 140px;
+        transition: all 0.3s ease;
+      }
+
+      .flow-step:hover,
+      .flow-step.active {
+        border-color: var(--accent-orange);
+        transform: translateY(-4px);
+      }
+
+      .step-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+      }
+      .step-content h3 {
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+      }
+      .step-content p {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+      }
+
+      .flow-arrow {
+        font-size: 1.5rem;
+        color: var(--accent-cyan);
+        font-weight: bold;
+      }
+
+      .flow-arrow.loop {
+        color: var(--accent-orange);
+      }
+
+      /* Code Block */
+      .code-block {
+        margin-top: 2rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        overflow-x: auto;
+      }
+
+      .code-block pre {
+        margin: 0;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.85rem;
+        line-height: 1.6;
+      }
+
+      .code-block code {
+        color: var(--text-secondary);
+      }
+
+      /* Tools Grid */
+      .tools-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.5rem;
+        margin: 2rem 0;
+      }
+
+      .tool-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+      }
+
+      .tool-card:hover {
+        border-color: var(--accent-cyan);
+        transform: translateY(-4px);
+      }
+
+      .tool-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+      }
+      .tool-card h3 {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+      }
+      .tool-card p {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+      }
+
+      .tool-flow {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: var(--bg-card);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+      }
+
+      .flow-item {
+        flex: 1;
+        text-align: center;
+        padding: 1rem;
+        background: rgba(232, 93, 42, 0.1);
+        border-radius: 12px;
+        font-weight: 500;
+        position: relative;
+      }
+
+      .flow-item span {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        font-weight: 400;
+        margin-top: 0.25rem;
+      }
+
+      .flow-item:not(:last-child)::after {
+        content: "→";
+        position: absolute;
+        right: -1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--accent-cyan);
+        font-weight: bold;
+      }
+
+      /* Permissions Grid */
+      .permissions-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin: 2rem 0;
+      }
+
+      .permission-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+      }
+
+      .permission-card:hover {
+        transform: translateY(-4px);
+      }
+      .permission-card.default:hover {
+        border-color: #22c55e;
+      }
+      .permission-card.auto:hover {
+        border-color: var(--accent-orange);
+      }
+      .permission-card.plan:hover {
+        border-color: var(--accent-cyan);
+      }
+      .permission-card.bypass:hover {
+        border-color: var(--accent-purple);
+      }
+
+      .permission-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .mode-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-family: "JetBrains Mono", monospace;
+        font-weight: 500;
+      }
+
+      .default .mode-badge {
+        background: rgba(34, 197, 94, 0.15);
+        color: #16a34a;
+      }
+      .auto .mode-badge {
+        background: rgba(232, 93, 42, 0.15);
+        color: var(--accent-orange);
+      }
+      .plan .mode-badge {
+        background: rgba(8, 145, 178, 0.15);
+        color: var(--accent-cyan);
+      }
+      .bypass .mode-badge {
+        background: rgba(124, 58, 237, 0.15);
+        color: var(--accent-purple);
+      }
+
+      .permission-card h3 {
+        font-size: 1.2rem;
+      }
+      .permission-card p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      /* Context Layers */
+      .context-layers {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        margin: 2rem 0;
+      }
+
+      .layer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.25rem 1.5rem;
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        transition: all 0.3s ease;
+      }
+
+      .layer:hover {
+        transform: translateX(8px);
+      }
+
+      .layer.system-prompt {
+        background: linear-gradient(
+          90deg,
+          rgba(232, 93, 42, 0.12) 0%,
+          transparent 100%
+        );
+      }
+      .layer.user-context {
+        background: linear-gradient(
+          90deg,
+          rgba(8, 145, 178, 0.12) 0%,
+          transparent 100%
+        );
+      }
+      .layer.system-context {
+        background: linear-gradient(
+          90deg,
+          rgba(124, 58, 237, 0.12) 0%,
+          transparent 100%
+        );
+      }
+      .layer.conversation {
+        background: linear-gradient(
+          90deg,
+          rgba(34, 197, 94, 0.12) 0%,
+          transparent 100%
+        );
+      }
+      .layer.tool-results {
+        background: linear-gradient(
+          90deg,
+          rgba(217, 119, 6, 0.12) 0%,
+          transparent 100%
+        );
+      }
+
+      .layer-label {
+        font-weight: 600;
+      }
+      .layer-desc {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      .compaction-info {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin-top: 2rem;
+      }
+
+      .info-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+      }
+
+      .info-card h4 {
+        color: var(--accent-cyan);
+        margin-bottom: 0.5rem;
+      }
+      .info-card p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      /* Patterns Grid */
+      .patterns-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+        margin: 2rem 0;
+      }
+
+      .pattern-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+      }
+
+      .pattern-card:hover {
+        border-color: var(--accent-purple);
+        transform: translateY(-4px);
+      }
+
+      .pattern-icon {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+      }
+      .pattern-card h3 {
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+      }
+      .pattern-card p {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+      }
+
+      .pattern-card code {
+        display: block;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 0.75rem;
+        color: var(--accent-cyan);
+        background: rgba(8, 145, 178, 0.1);
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+      }
+
+      /* Summary Slide */
+      .summary-slide {
+        background:
+          radial-gradient(
+            ellipse at 50% 50%,
+            rgba(124, 58, 237, 0.06) 0%,
+            transparent 50%
+          ),
+          var(--bg-dark);
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 3rem;
+        margin: 2rem 0;
+      }
+
+      .summary-column h4 {
+        color: var(--accent-orange);
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--border);
+      }
+
+      .summary-column ul {
+        list-style: none;
+      }
+
+      .summary-column li {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-secondary);
+      }
+
+      .summary-column li::before {
+        content: "→";
+        color: var(--accent-cyan);
+        margin-right: 0.75rem;
+      }
+
+      .final-note {
+        margin-top: 3rem;
+        padding: 2rem;
+        background: var(--bg-card);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        text-align: center;
+      }
+
+      .final-note p {
+        color: var(--text-secondary);
+        font-style: italic;
+        font-family: "Instrument Serif", serif;
+        font-size: 1.2rem;
+        line-height: 1.8;
+      }
+
+      /* Responsive */
+      @media (max-width: 1200px) {
+        .nav-links a {
+          padding: 0.4rem 0.6rem;
+          font-size: 0.75rem;
         }
-
-        .flow-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 1.5rem;
-            background: rgba(0,0,0,0.02);
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            min-width: 140px;
-            transition: all 0.3s ease;
+        .nav-links {
+          gap: 0.25rem;
         }
-
-        .flow-step:hover, .flow-step.active {
-            border-color: var(--accent-orange);
-            transform: translateY(-4px);
+        .toggle-label {
+          font-size: 0.75rem;
         }
-
-        .step-icon { font-size: 2rem; margin-bottom: 0.5rem; }
-        .step-content h3 { font-size: 1rem; margin-bottom: 0.25rem; }
-        .step-content p { font-size: 0.75rem; color: var(--text-secondary); }
-
-        .flow-arrow {
-            font-size: 1.5rem;
-            color: var(--accent-cyan);
-            font-weight: bold;
+        .depth-toggle {
+          gap: 0.5rem;
         }
-
-        .flow-arrow.loop { color: var(--accent-orange); }
-
-        /* Code Block */
-        .code-block {
-            margin-top: 2rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            overflow-x: auto;
+        .nav-toggles {
+          gap: 1rem;
         }
+      }
 
-        .code-block pre {
-            margin: 0;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            line-height: 1.6;
+      @media (max-width: 1050px) {
+        .nav-links {
+          display: none;
         }
+      }
 
-        .code-block code {
-            color: var(--text-secondary);
+      @media (max-width: 1024px) {
+        .slide {
+          padding: 6rem 2rem 3rem;
         }
-
-        /* Tools Grid */
-        .tools-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin: 2rem 0;
+        h1 {
+          font-size: 3rem;
         }
-
-        .tool-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
+        h2 {
+          font-size: 2rem;
         }
-
-        .tool-card:hover {
-            border-color: var(--accent-cyan);
-            transform: translateY(-4px);
+        .hero-grid {
+          grid-template-columns: repeat(3, 1fr);
         }
-
-        .tool-icon { font-size: 2rem; margin-bottom: 1rem; }
-        .tool-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
-        .tool-card p { font-size: 0.85rem; color: var(--text-secondary); }
-
-        .tool-flow {
-            display: flex;
-            justify-content: space-between;
-            gap: 1rem;
-            margin-top: 2rem;
-            padding: 1.5rem;
-            background: var(--bg-card);
-            border-radius: 16px;
-            border: 1px solid var(--border);
-        }
-
-        .flow-item {
-            flex: 1;
-            text-align: center;
-            padding: 1rem;
-            background: rgba(232,93,42,0.1);
-            border-radius: 12px;
-            font-weight: 500;
-            position: relative;
-        }
-
-        .flow-item span {
-            display: block;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            font-weight: 400;
-            margin-top: 0.25rem;
-        }
-
-        .flow-item:not(:last-child)::after {
-            content: '→';
-            position: absolute;
-            right: -1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--accent-cyan);
-            font-weight: bold;
-        }
-
-        /* Permissions Grid */
-        .permissions-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-            margin: 2rem 0;
-        }
-
-        .permission-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .permission-card:hover { transform: translateY(-4px); }
-        .permission-card.default:hover { border-color: #22c55e; }
-        .permission-card.auto:hover { border-color: var(--accent-orange); }
-        .permission-card.plan:hover { border-color: var(--accent-cyan); }
-        .permission-card.bypass:hover { border-color: var(--accent-purple); }
-
-        .permission-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
-
-        .mode-badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 100px;
-            font-size: 0.75rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 500;
-        }
-
-        .default .mode-badge { background: rgba(34,197,94,0.15); color: #16a34a; }
-        .auto .mode-badge { background: rgba(232,93,42,0.15); color: var(--accent-orange); }
-        .plan .mode-badge { background: rgba(8,145,178,0.15); color: var(--accent-cyan); }
-        .bypass .mode-badge { background: rgba(124,58,237,0.15); color: var(--accent-purple); }
-
-        .permission-card h3 { font-size: 1.2rem; }
-        .permission-card p { color: var(--text-secondary); font-size: 0.9rem; }
-
-        /* Context Layers */
-        .context-layers {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            margin: 2rem 0;
-        }
-
-        .layer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.25rem 1.5rem;
-            border-radius: 12px;
-            border: 1px solid var(--border);
-            transition: all 0.3s ease;
-        }
-
-        .layer:hover { transform: translateX(8px); }
-
-        .layer.system-prompt { background: linear-gradient(90deg, rgba(232,93,42,0.12) 0%, transparent 100%); }
-        .layer.user-context { background: linear-gradient(90deg, rgba(8,145,178,0.12) 0%, transparent 100%); }
-        .layer.system-context { background: linear-gradient(90deg, rgba(124,58,237,0.12) 0%, transparent 100%); }
-        .layer.conversation { background: linear-gradient(90deg, rgba(34,197,94,0.12) 0%, transparent 100%); }
-        .layer.tool-results { background: linear-gradient(90deg, rgba(217,119,6,0.12) 0%, transparent 100%); }
-
-        .layer-label { font-weight: 600; }
-        .layer-desc { color: var(--text-secondary); font-size: 0.9rem; }
-
-        .compaction-info {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-
-        .info-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-        }
-
-        .info-card h4 { color: var(--accent-cyan); margin-bottom: 0.5rem; }
-        .info-card p { color: var(--text-secondary); font-size: 0.9rem; }
-
-        /* Patterns Grid */
-        .patterns-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 1.5rem;
-            margin: 2rem 0;
-        }
-
-        .pattern-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .pattern-card:hover {
-            border-color: var(--accent-purple);
-            transform: translateY(-4px);
-        }
-
-        .pattern-icon { font-size: 2rem; margin-bottom: 1rem; }
-        .pattern-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
-        .pattern-card p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem; }
-
-        .pattern-card code {
-            display: block;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: var(--accent-cyan);
-            background: rgba(8,145,178,0.1);
-            padding: 0.5rem 0.75rem;
-            border-radius: 8px;
-        }
-
-        /* Summary Slide */
-        .summary-slide {
-            background:
-                radial-gradient(ellipse at 50% 50%, rgba(124,58,237,0.06) 0%, transparent 50%),
-                var(--bg-dark);
-        }
-
+        .tools-grid,
+        .permissions-grid,
+        .patterns-grid,
         .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 3rem;
-            margin: 2rem 0;
+          grid-template-columns: 1fr;
         }
+        .slide-number {
+          font-size: 5rem;
+          right: 2rem;
+        }
+      }
 
-        .summary-column h4 {
-            color: var(--accent-orange);
-            font-size: 1.2rem;
-            margin-bottom: 1rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 1px solid var(--border);
+      @media (max-width: 768px) {
+        nav {
+          padding: 0.75rem 1rem;
         }
-
-        .summary-column ul {
-            list-style: none;
+        h1 {
+          font-size: 2.5rem;
         }
-
-        .summary-column li {
-            padding: 0.75rem 0;
-            border-bottom: 1px solid var(--border);
-            color: var(--text-secondary);
+        .hero-grid {
+          grid-template-columns: repeat(2, 1fr);
         }
-
-        .summary-column li::before {
-            content: '→';
-            color: var(--accent-cyan);
-            margin-right: 0.75rem;
+        .flow-container {
+          flex-wrap: wrap;
         }
-
-        .final-note {
-            margin-top: 3rem;
-            padding: 2rem;
-            background: var(--bg-card);
-            border-radius: 16px;
-            border: 1px solid var(--border);
-            text-align: center;
+        .tool-flow {
+          flex-direction: column;
         }
-
-        .final-note p {
-            color: var(--text-secondary);
-            font-style: italic;
-            font-family: 'Instrument Serif', serif;
-            font-size: 1.2rem;
-            line-height: 1.8;
+        .flow-item::after {
+          display: none;
         }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .nav-links a {
-                padding: 0.4rem 0.6rem;
-                font-size: 0.75rem;
-            }
-            .nav-links { gap: 0.25rem; }
-            .toggle-label { font-size: 0.75rem; }
-            .depth-toggle { gap: 0.5rem; }
-            .nav-toggles { gap: 1rem; }
+        .toggle-label {
+          display: none;
         }
-
-        @media (max-width: 1050px) {
-            .nav-links { display: none; }
-        }
-
-        @media (max-width: 1024px) {
-            .slide { padding: 6rem 2rem 3rem; }
-            h1 { font-size: 3rem; }
-            h2 { font-size: 2rem; }
-            .hero-grid { grid-template-columns: repeat(3, 1fr); }
-            .tools-grid, .permissions-grid, .patterns-grid, .summary-grid { grid-template-columns: 1fr; }
-            .slide-number { font-size: 5rem; right: 2rem; }
-        }
-
-        @media (max-width: 768px) {
-            nav { padding: 0.75rem 1rem; }
-            h1 { font-size: 2.5rem; }
-            .hero-grid { grid-template-columns: repeat(2, 1fr); }
-            .flow-container { flex-wrap: wrap; }
-            .tool-flow { flex-direction: column; }
-            .flow-item::after { display: none; }
-            .toggle-label { display: none; }
-        }
+      }
     </style>
 
     <script>
-        const body = document.body;
+      const body = document.body;
 
-        // Deep Mode Toggle
-        const deepToggle = document.getElementById('deepModeToggle');
+      // Deep Mode Toggle
+      const deepToggle = document.getElementById("deepModeToggle");
 
-        // Initialize deep mode based on toggle state (checked = deep mode)
-        if (deepToggle.checked) {
-            body.classList.add('deep-mode');
-        }
+      // Initialize deep mode based on toggle state (checked = deep mode)
+      if (deepToggle.checked) {
+        body.classList.add("deep-mode");
+      }
 
-        deepToggle.addEventListener('change', () => {
-            body.classList.toggle('deep-mode', deepToggle.checked);
-            localStorage.setItem('deepMode', deepToggle.checked);
-        });
+      deepToggle.addEventListener("change", () => {
+        body.classList.toggle("deep-mode", deepToggle.checked);
+        localStorage.setItem("deepMode", deepToggle.checked);
+      });
 
-        // Theme Toggle (Light/Dark)
-        const themeToggle = document.getElementById('themeToggle');
+      // Theme Toggle (Light/Dark)
+      const themeToggle = document.getElementById("themeToggle");
 
-        // Check for saved preference or system preference
-        const savedTheme = localStorage.getItem('darkMode');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      // Check for saved preference or system preference
+      const savedTheme = localStorage.getItem("darkMode");
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+      ).matches;
 
-        if (savedTheme === 'true' || (savedTheme === null && prefersDark)) {
-            body.classList.add('dark-mode');
-        }
+      if (savedTheme === "true" || (savedTheme === null && prefersDark)) {
+        body.classList.add("dark-mode");
+      }
 
-        themeToggle.addEventListener('click', () => {
-            body.classList.toggle('dark-mode');
-            localStorage.setItem('darkMode', body.classList.contains('dark-mode'));
-        });
+      themeToggle.addEventListener("click", () => {
+        body.classList.toggle("dark-mode");
+        localStorage.setItem("darkMode", body.classList.contains("dark-mode"));
+      });
 
-        // Restore deep mode preference
-        const savedDeepMode = localStorage.getItem('deepMode');
-        if (savedDeepMode !== null) {
-            const isDeep = savedDeepMode === 'true';
-            deepToggle.checked = isDeep;
-            body.classList.toggle('deep-mode', isDeep);
-        }
+      // Restore deep mode preference
+      const savedDeepMode = localStorage.getItem("deepMode");
+      if (savedDeepMode !== null) {
+        const isDeep = savedDeepMode === "true";
+        deepToggle.checked = isDeep;
+        body.classList.toggle("deep-mode", isDeep);
+      }
     </script>
-</body>
+  </body>
 </html>
