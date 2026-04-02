@@ -774,59 +774,103 @@
         <div class="slide-number">01</div>
         <div class="slide-content">
             <h2>What is an AI Harness?</h2>
-            <p class="subtitle">The runtime orchestration layer that wraps an LLM API, implementing the agentic loop, tool dispatch, and state management required for autonomous operation.</p>
 
-            <div class="technical-diagram">
-                <div class="diagram-layer user-layer">
-                    <span class="layer-name">User Interface</span>
-                    <div class="layer-components">
-                        <span>CLI / Web UI / IDE Extension</span>
+            <!-- Simple subtitle -->
+            <p class="subtitle simple-content">The orchestration layer that transforms a raw LLM into a functional AI agent.</p>
+
+            <!-- Technical subtitle -->
+            <p class="subtitle deep-content">The runtime orchestration layer that wraps an LLM API, implementing the agentic loop, tool dispatch, and state management required for autonomous operation.</p>
+
+            <!-- Simple View -->
+            <div class="simple-content">
+                <div class="comparison-grid">
+                    <div class="comparison-card llm-only">
+                        <div class="comparison-icon">🧠</div>
+                        <h3>LLM Alone</h3>
+                        <p class="comparison-metaphor">"A brain in a jar"</p>
+                        <ul>
+                            <li>Can think and respond</li>
+                            <li>Generates text only</li>
+                            <li>No world interaction</li>
+                            <li>Stateless between calls</li>
+                        </ul>
+                    </div>
+                    <div class="comparison-arrow">→</div>
+                    <div class="comparison-card with-harness">
+                        <div class="comparison-icon">🤖</div>
+                        <h3>LLM + Harness</h3>
+                        <p class="comparison-metaphor">"A fully equipped agent"</p>
+                        <ul>
+                            <li>Reads files, runs commands</li>
+                            <li>Searches the web</li>
+                            <li>Manages tasks & state</li>
+                            <li>Takes real-world actions</li>
+                        </ul>
                     </div>
                 </div>
-                <div class="diagram-arrow">↓ stdin / HTTP ↑ streaming chunks</div>
-                <div class="diagram-layer harness-layer">
-                    <span class="layer-name">AI Harness</span>
-                    <div class="harness-internals">
-                        <div class="harness-module">
-                            <code>query()</code>
-                            <span>Agentic Loop</span>
-                        </div>
-                        <div class="harness-module">
-                            <code>Tool[]</code>
-                            <span>Tool Registry</span>
-                        </div>
-                        <div class="harness-module">
-                            <code>Message[]</code>
-                            <span>Context Buffer</span>
-                        </div>
-                        <div class="harness-module">
-                            <code>permissions</code>
-                            <span>Auth Layer</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="diagram-arrow">↓ messages + tools ↑ stream / tool_use</div>
-                <div class="diagram-layer llm-layer">
-                    <span class="layer-name">LLM API</span>
-                    <div class="layer-components">
-                        <span>Claude / GPT / Gemini (stateless completion endpoint)</span>
-                    </div>
+                <div class="harness-responsibilities">
+                    <div class="responsibility"><span class="resp-icon">🔧</span><span class="resp-text">Tool Execution</span></div>
+                    <div class="responsibility"><span class="resp-icon">💬</span><span class="resp-text">Conversation Management</span></div>
+                    <div class="responsibility"><span class="resp-icon">🔒</span><span class="resp-text">Permission Control</span></div>
+                    <div class="responsibility"><span class="resp-icon">📊</span><span class="resp-text">Context Window</span></div>
+                    <div class="responsibility"><span class="resp-icon">⚡</span><span class="resp-text">Streaming & UI</span></div>
+                    <div class="responsibility"><span class="resp-icon">🔄</span><span class="resp-text">Error Recovery</span></div>
                 </div>
             </div>
 
-            <div class="technical-details">
-                <div class="tech-card">
-                    <h4>Without Harness</h4>
-                    <div class="code-snippet">
-                        <pre>response = llm.complete(prompt)
-# Returns text. That's it.
-# No memory, no actions, no tools.</pre>
+            <!-- Deep View -->
+            <div class="deep-content">
+                <div class="technical-diagram">
+                    <div class="diagram-layer user-layer">
+                        <span class="layer-name">User Interface</span>
+                        <div class="layer-components">
+                            <span>CLI / Web UI / IDE Extension</span>
+                        </div>
+                    </div>
+                    <div class="diagram-arrow">↓ stdin / HTTP ↑ streaming chunks</div>
+                    <div class="diagram-layer harness-layer">
+                        <span class="layer-name">AI Harness</span>
+                        <div class="harness-internals">
+                            <div class="harness-module">
+                                <code>query()</code>
+                                <span>Agentic Loop</span>
+                            </div>
+                            <div class="harness-module">
+                                <code>Tool[]</code>
+                                <span>Tool Registry</span>
+                            </div>
+                            <div class="harness-module">
+                                <code>Message[]</code>
+                                <span>Context Buffer</span>
+                            </div>
+                            <div class="harness-module">
+                                <code>permissions</code>
+                                <span>Auth Layer</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="diagram-arrow">↓ messages + tools ↑ stream / tool_use</div>
+                    <div class="diagram-layer llm-layer">
+                        <span class="layer-name">LLM API</span>
+                        <div class="layer-components">
+                            <span>Claude / GPT / Gemini (stateless completion endpoint)</span>
+                        </div>
                     </div>
                 </div>
-                <div class="tech-card">
-                    <h4>With Harness</h4>
-                    <div class="code-snippet">
-                        <pre>while (true) {
+
+                <div class="technical-details">
+                    <div class="tech-card">
+                        <h4>Without Harness</h4>
+                        <div class="code-snippet">
+                            <pre>response = llm.complete(prompt)
+# Returns text. That's it.
+# No memory, no actions, no tools.</pre>
+                        </div>
+                    </div>
+                    <div class="tech-card">
+                        <h4>With Harness</h4>
+                        <div class="code-snippet">
+                            <pre>while (true) {
   response = llm.complete(messages, tools)
   if (response.tool_use) {
     result = executeTool(response.tool_use)
@@ -835,28 +879,29 @@
   }
   return response  // Done
 }</pre>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="core-contracts">
-                <h4>Core Contracts</h4>
-                <div class="contracts-grid">
-                    <div class="contract">
-                        <code>Tool</code>
-                        <span>inputSchema (Zod) → call() → ToolResult</span>
-                    </div>
-                    <div class="contract">
-                        <code>Message</code>
-                        <span>user | assistant | tool_use | tool_result</span>
-                    </div>
-                    <div class="contract">
-                        <code>Permission</code>
-                        <span>tool × action → allow | deny | ask</span>
-                    </div>
-                    <div class="contract">
-                        <code>Context</code>
-                        <span>system + messages → compact() when > threshold</span>
+                <div class="core-contracts">
+                    <h4>Core Contracts</h4>
+                    <div class="contracts-grid">
+                        <div class="contract">
+                            <code>Tool</code>
+                            <span>inputSchema (Zod) → call() → ToolResult</span>
+                        </div>
+                        <div class="contract">
+                            <code>Message</code>
+                            <span>user | assistant | tool_use | tool_result</span>
+                        </div>
+                        <div class="contract">
+                            <code>Permission</code>
+                            <span>tool × action → allow | deny | ask</span>
+                        </div>
+                        <div class="contract">
+                            <code>Context</code>
+                            <span>system + messages → compact() when > threshold</span>
+                        </div>
                     </div>
                 </div>
             </div>
