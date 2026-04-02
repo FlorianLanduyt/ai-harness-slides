@@ -1941,6 +1941,21 @@ mcpTools.map(t => ({
         }
 
         /* Responsive */
+        @media (max-width: 1200px) {
+            .nav-links a {
+                padding: 0.4rem 0.6rem;
+                font-size: 0.75rem;
+            }
+            .nav-links { gap: 0.25rem; }
+            .toggle-label { font-size: 0.75rem; }
+            .depth-toggle { gap: 0.5rem; }
+            .nav-toggles { gap: 1rem; }
+        }
+
+        @media (max-width: 1050px) {
+            .nav-links { display: none; }
+        }
+
         @media (max-width: 1024px) {
             .slide { padding: 6rem 2rem 3rem; }
             h1 { font-size: 3rem; }
@@ -1952,12 +1967,12 @@ mcpTools.map(t => ({
 
         @media (max-width: 768px) {
             nav { padding: 0.75rem 1rem; }
-            .nav-links { display: none; }
             h1 { font-size: 2.5rem; }
             .hero-grid { grid-template-columns: repeat(2, 1fr); }
             .flow-container { flex-wrap: wrap; }
             .tool-flow { flex-direction: column; }
             .flow-item::after { display: none; }
+            .toggle-label { display: none; }
         }
     </style>
 
