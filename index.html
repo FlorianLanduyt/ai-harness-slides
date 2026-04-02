@@ -243,6 +243,10 @@
             margin-top: 2.5rem;
         }
 
+        .hero-tag-wrapper {
+            position: relative;
+        }
+
         .hero-tag {
             padding: 0.6rem 1.25rem;
             background: var(--bg-card);
@@ -251,12 +255,102 @@
             font-size: 0.9rem;
             color: var(--text-secondary);
             transition: all 0.2s ease;
+            cursor: pointer;
+            display: block;
         }
 
-        .hero-tag:hover {
+        .hero-tag-wrapper:hover .hero-tag {
             border-color: var(--accent-cyan);
             color: var(--accent-cyan);
             transform: translateY(-2px);
+        }
+
+        /* Tooltip */
+        .hero-tag-tooltip {
+            position: absolute;
+            bottom: calc(100% + 12px);
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            min-width: 220px;
+            box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
+            z-index: 100;
+            text-align: left;
+        }
+
+        .hero-tag-tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: var(--bg-card);
+        }
+
+        .hero-tag-wrapper:hover .hero-tag-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .tooltip-title {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--accent-orange);
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero-tag-tooltip ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .hero-tag-tooltip li {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            padding: 0.3rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .hero-tag-tooltip li::before {
+            content: '→';
+            color: var(--accent-cyan);
+            font-size: 0.7rem;
+        }
+
+        .hero-tag-tooltip li.more {
+            color: var(--text-secondary);
+            font-style: italic;
+            opacity: 0.7;
+        }
+
+        .hero-tag-tooltip li.more::before {
+            content: '';
+        }
+
+        .hero-tag-tooltip code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            background: rgba(0,0,0,0.1);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            color: var(--accent-purple);
+        }
+
+        body.dark-mode .hero-tag-tooltip code {
+            background: rgba(255,255,255,0.1);
         }
 
         /* Terminal Style for Deep Mode */
@@ -858,13 +952,81 @@
             <!-- Technical subtitle -->
             <p class="subtitle deep-content">Reverse-engineering Claude Code's runtime: <code>async function* query()</code> → ReAct loop, tool dispatch via <code>Tool&lt;I,O&gt;</code> interface, context compaction at 90% of 200K tokens.</p>
 
-            <!-- Simple: Clean pill tags -->
+            <!-- Simple: Clean pill tags with hover tooltips -->
             <div class="hero-tags simple-content">
-                <span class="hero-tag">12 Core Components</span>
-                <span class="hero-tag">50+ Tools</span>
-                <span class="hero-tag">4 Permission Modes</span>
-                <span class="hero-tag">200K Context</span>
-                <span class="hero-tag">MCP Extensible</span>
+                <div class="hero-tag-wrapper">
+                    <span class="hero-tag">12 Core Components</span>
+                    <div class="hero-tag-tooltip">
+                        <div class="tooltip-title">Core Components</div>
+                        <ul>
+                            <li>Query Loop</li>
+                            <li>Tool Registry</li>
+                            <li>Permission System</li>
+                            <li>Context Manager</li>
+                            <li>Streaming Handler</li>
+                            <li>Error Recovery</li>
+                            <li>Message Parser</li>
+                            <li>Compaction Agent</li>
+                            <li>MCP Client</li>
+                            <li>Session State</li>
+                            <li>Config Loader</li>
+                            <li>UI Renderer</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="hero-tag-wrapper">
+                    <span class="hero-tag">50+ Tools</span>
+                    <div class="hero-tag-tooltip">
+                        <div class="tooltip-title">Built-in Tools</div>
+                        <ul>
+                            <li>FileReadTool</li>
+                            <li>FileEditTool</li>
+                            <li>BashTool</li>
+                            <li>GlobTool</li>
+                            <li>GrepTool</li>
+                            <li>WebSearchTool</li>
+                            <li>WebFetchTool</li>
+                            <li>AgentTool</li>
+                            <li class="more">+ 42 more...</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="hero-tag-wrapper">
+                    <span class="hero-tag">4 Permission Modes</span>
+                    <div class="hero-tag-tooltip">
+                        <div class="tooltip-title">Permission Modes</div>
+                        <ul>
+                            <li><code>default</code> — Ask for dangerous ops</li>
+                            <li><code>auto</code> — ML classifier approval</li>
+                            <li><code>plan</code> — Read-only mode</li>
+                            <li><code>bypass</code> — Trust everything</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="hero-tag-wrapper">
+                    <span class="hero-tag">200K Context</span>
+                    <div class="hero-tag-tooltip">
+                        <div class="tooltip-title">Context Window</div>
+                        <ul>
+                            <li>~200K token limit</li>
+                            <li>Auto-compact at 90%</li>
+                            <li>Microcompaction for large outputs</li>
+                            <li>tiktoken (cl100k_base)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="hero-tag-wrapper">
+                    <span class="hero-tag">MCP Extensible</span>
+                    <div class="hero-tag-tooltip">
+                        <div class="tooltip-title">Model Context Protocol</div>
+                        <ul>
+                            <li>JSON-RPC over stdio/HTTP</li>
+                            <li>Dynamic tool discovery</li>
+                            <li>External server integration</li>
+                            <li>Unified Tool interface</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
 
             <!-- Deep: Terminal-style stack info -->
