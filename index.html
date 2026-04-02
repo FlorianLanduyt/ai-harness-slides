@@ -47,7 +47,11 @@
             overflow-x: hidden;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
-        
+
+        html {
+            overflow-x: hidden;
+        }
+
         /* Navigation */
         nav {
             position: fixed;
@@ -358,7 +362,7 @@
         /* SVG Architecture Diagram */
         .svg-diagram-container {
             margin: 2.5rem auto;
-            max-width: 850px;
+            max-width: min(850px, calc(100vw - 4rem));
             background: var(--bg-card);
             border-radius: 16px;
             padding: 1.5rem;
@@ -389,7 +393,7 @@
         /* ASCII Diagram Terminal */
         .ascii-diagram-terminal {
             margin: 2rem auto;
-            max-width: 900px;
+            max-width: min(900px, calc(100vw - 4rem));
             background: var(--code-bg);
             border-radius: 12px;
             overflow: hidden;
