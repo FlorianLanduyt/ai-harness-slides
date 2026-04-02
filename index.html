@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Harness Architecture | Deep Dive</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #f8f9fc;
+            --bg-card: #ffffff;
+            --accent-orange: #e85d2a;
+            --accent-cyan: #0891b2;
+            --accent-purple: #7c3aed;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: rgba(0,0,0,0.08);
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        html { scroll-behavior: smooth; }
+        
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 1rem 2rem;
+            background: rgba(248,249,252,0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.5rem;
+            font-style: italic;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-links a:hover {
+            color: var(--text-primary);
+            background: rgba(0,0,0,0.05);
+        }
+        
+        /* Slide Section */
+        .slide {
+            min-height: 100vh;
+            padding: 8rem 4rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .slide-number {
+            position: absolute;
+            top: 6rem;
+            right: 4rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 8rem;
+            font-weight: 700;
+            color: rgba(232,93,42,0.12);
+            line-height: 1;
+        }
+        
+        .slide-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        h1 {
+            font-family: 'Instrument Serif', serif;
+            font-size: 5rem;
+            font-weight: 400;
+            line-height: 1.1;
+            margin-bottom: 2rem;
+        }
+        
+        h1 .highlight {
+            font-style: italic;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        h2 {
+            font-size: 3rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        h2::before {
+            content: '';
+            width: 40px;
+            height: 4px;
+            background: var(--accent-orange);
+            border-radius: 2px;
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            max-width: 700px;
+            margin-bottom: 3rem;
+        }
+        
+        /* Hero */
+        #hero {
+            background:
+                radial-gradient(ellipse at 30% 20%, rgba(232,93,42,0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 80%, rgba(8,145,178,0.06) 0%, transparent 50%),
+                var(--bg-dark);
+        }
+        
+        .hero-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-top: 3rem;
+        }
+        
+        .hero-stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        .hero-stat:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-orange);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        
+        .hero-stat .number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+        }
+        
+        .hero-stat .label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="logo">AI Harness</div>
+        <div class="nav-links">
+            <a href="#hero">Overview</a>
+            <a href="#query-loop">Query Loop</a>
+            <a href="#tools">Tools</a>
+            <a href="#permissions">Permissions</a>
+            <a href="#context">Context</a>
+            <a href="#patterns">Patterns</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero" class="slide">
+        <div class="slide-number">00</div>
+        <div class="slide-content">
+            <h1>Understanding the<br><span class="highlight">AI Agent Harness</span></h1>
+            <p class="subtitle">A comprehensive deep dive into Claude Code's production-grade architecture — the orchestration layer that powers intelligent AI agents.</p>
+            <div class="hero-grid">
+                <div class="hero-stat">
+                    <div class="number">12</div>
+                    <div class="label">Core Components</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="number">50+</div>
+                    <div class="label">Built-in Tools</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="number">4</div>
+                    <div class="label">Permission Modes</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="number">200K</div>
+                    <div class="label">Context Tokens</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="number">∞</div>
+                    <div class="label">Extensibility</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Query Loop Section -->
+    <section id="query-loop" class="slide">
+        <div class="slide-number">01</div>
+        <div class="slide-content">
+            <h2>The Core Query Loop</h2>
+            <p class="subtitle">The heart of the agentic system — a while(true) loop that continues until the model stops requesting tools.</p>
+            <div class="diagram">
+                <div class="flow-container">
+                    <div class="flow-step">
+                        <div class="step-icon">💬</div>
+                        <div class="step-content">
+                            <h3>User Message</h3>
+                            <p>Input enters the system</p>
+                        </div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step active">
+                        <div class="step-icon">🤖</div>
+                        <div class="step-content">
+                            <h3>Model Call</h3>
+                            <p>Stream response chunks</p>
+                        </div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <div class="step-icon">🔍</div>
+                        <div class="step-content">
+                            <h3>Check Tools</h3>
+                            <p>Detect tool_use blocks</p>
+                        </div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-step">
+                        <div class="step-icon">⚡</div>
+                        <div class="step-content">
+                            <h3>Execute</h3>
+                            <p>Run tools in parallel</p>
+                        </div>
+                    </div>
+                    <div class="flow-arrow loop">↺</div>
+                </div>
+            </div>
+            <div class="code-block">
+                <pre><code>while (true) {
+  messagesForQuery = await applyAutoCompact(messages)
+
+  for await (const message of callModel(messagesForQuery)) {
+    yield message  // Stream to UI
+    if (hasToolUse(message)) needsFollowUp = true
+  }
+
+  if (needsFollowUp) {
+    for await (const result of runTools(toolUseBlocks)) {
+      messages.push(result)
+    }
+    continue  // Loop back
+  }
+
+  return { reason: 'end_turn' }  // Done!
+}</code></pre>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tools Section -->
+    <section id="tools" class="slide">
+        <div class="slide-number">02</div>
+        <div class="slide-content">
+            <h2>Tool System Architecture</h2>
+            <p class="subtitle">Each tool is a self-contained module with schema validation, permission checks, and rendering capabilities.</p>
+            <div class="tools-grid">
+                <div class="tool-card">
+                    <div class="tool-icon">📁</div>
+                    <h3>File Operations</h3>
+                    <p>FileReadTool, FileEditTool, FileWriteTool</p>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon">💻</div>
+                    <h3>Shell</h3>
+                    <p>BashTool, PowerShellTool</p>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon">🔎</div>
+                    <h3>Search</h3>
+                    <p>GlobTool, GrepTool, WebSearchTool</p>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon">🤖</div>
+                    <h3>Agents</h3>
+                    <p>AgentTool, TaskCreateTool</p>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon">🌐</div>
+                    <h3>External</h3>
+                    <p>WebFetchTool, MCP Tools</p>
+                </div>
+                <div class="tool-card">
+                    <div class="tool-icon">🔧</div>
+                    <h3>Custom</h3>
+                    <p>Skills, Plugins, Extensions</p>
+                </div>
+            </div>
+            <div class="tool-flow">
+                <div class="flow-item">Parse Input<span>Zod Schema</span></div>
+                <div class="flow-item">Validate<span>validateInput()</span></div>
+                <div class="flow-item">Permission<span>checkPermissions()</span></div>
+                <div class="flow-item">Execute<span>call()</span></div>
+                <div class="flow-item">Format<span>mapToResult()</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Permissions Section -->
+    <section id="permissions" class="slide">
+        <div class="slide-number">03</div>
+        <div class="slide-content">
+            <h2>Permission System</h2>
+            <p class="subtitle">Defense in depth — multiple layers ensure safety with configurable permission modes.</p>
+            <div class="permissions-grid">
+                <div class="permission-card default">
+                    <div class="permission-header">
+                        <span class="mode-badge">default</span>
+                        <h3>Ask Mode</h3>
+                    </div>
+                    <p>Prompts user for dangerous operations. Safe default for most users.</p>
+                </div>
+                <div class="permission-card auto">
+                    <div class="permission-header">
+                        <span class="mode-badge">auto</span>
+                        <h3>YOLO Mode</h3>
+                    </div>
+                    <p>Auto-approve with ML classifier. For experienced users who trust the system.</p>
+                </div>
+                <div class="permission-card plan">
+                    <div class="permission-header">
+                        <span class="mode-badge">plan</span>
+                        <h3>Read-Only</h3>
+                    </div>
+                    <p>No writes allowed. Perfect for exploration and planning phases.</p>
+                </div>
+                <div class="permission-card bypass">
+                    <div class="permission-header">
+                        <span class="mode-badge">bypass</span>
+                        <h3>Trust All</h3>
+                    </div>
+                    <p>Allow everything. Only for fully trusted environments.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Context Section -->
+    <section id="context" class="slide">
+        <div class="slide-number">04</div>
+        <div class="slide-content">
+            <h2>Context Management</h2>
+            <p class="subtitle">Managing the ~200K token context window with auto-compaction and smart truncation.</p>
+            <div class="context-layers">
+                <div class="layer system-prompt">
+                    <span class="layer-label">System Prompt</span>
+                    <span class="layer-desc">Instructions & capabilities</span>
+                </div>
+                <div class="layer user-context">
+                    <span class="layer-label">User Context</span>
+                    <span class="layer-desc">CLAUDE.md, date, environment</span>
+                </div>
+                <div class="layer system-context">
+                    <span class="layer-label">System Context</span>
+                    <span class="layer-desc">Git status, working directory</span>
+                </div>
+                <div class="layer conversation">
+                    <span class="layer-label">Conversation History</span>
+                    <span class="layer-desc">Compacted when needed</span>
+                </div>
+                <div class="layer tool-results">
+                    <span class="layer-label">Tool Results</span>
+                    <span class="layer-desc">Truncated if too large</span>
+                </div>
+            </div>
+            <div class="compaction-info">
+                <div class="info-card">
+                    <h4>Auto-Compaction</h4>
+                    <p>When tokens exceed ~180K, old messages are summarized by a compaction agent</p>
+                </div>
+                <div class="info-card">
+                    <h4>Microcompaction</h4>
+                    <p>Large tool outputs are saved to temp files, with truncated preview in context</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Patterns Section -->
+    <section id="patterns" class="slide">
+        <div class="slide-number">05</div>
+        <div class="slide-content">
+            <h2>Key Architectural Patterns</h2>
+            <p class="subtitle">Battle-tested patterns from years of production AI system iteration.</p>
+            <div class="patterns-grid">
+                <div class="pattern-card">
+                    <div class="pattern-icon">🌊</div>
+                    <h3>Generator-Based Streaming</h3>
+                    <p>Async generators yield messages as they arrive. Consumer controls iteration with clean cancellation.</p>
+                    <code>async function* query(): AsyncGenerator&lt;Message&gt;</code>
+                </div>
+                <div class="pattern-card">
+                    <div class="pattern-icon">🧵</div>
+                    <h3>Context Threading</h3>
+                    <p>ToolUseContext carries state accessors, abort handling, and options through the entire call stack.</p>
+                    <code>tool.call(input, context, canUseTool, onProgress)</code>
+                </div>
+                <div class="pattern-card">
+                    <div class="pattern-icon">🔄</div>
+                    <h3>Recovery Patterns</h3>
+                    <p>Multi-level recovery for max_output_tokens, prompt_too_long, and rate_limit errors.</p>
+                    <code>for (const strategy of recoveryStrategies)</code>
+                </div>
+                <div class="pattern-card">
+                    <div class="pattern-icon">🎛️</div>
+                    <h3>Feature Flags</h3>
+                    <p>Compile-time elimination of unused features. Gradual rollout with zero runtime cost.</p>
+                    <code>const Tool = feature('FLAG') ? require('./Tool') : null</code>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Summary Section -->
+    <section id="summary" class="slide summary-slide">
+        <div class="slide-number">∞</div>
+        <div class="slide-content">
+            <h2>Building Your Own Harness</h2>
+            <p class="subtitle">Essential components and design principles for production AI agents.</p>
+            <div class="summary-grid">
+                <div class="summary-column">
+                    <h4>Essential Components</h4>
+                    <ul>
+                        <li>Query Loop — The agentic cycle</li>
+                        <li>Tool System — Unified interface</li>
+                        <li>Permission Layer — Safety by default</li>
+                        <li>Context Management — Token limits</li>
+                        <li>Streaming Architecture — Real-time</li>
+                        <li>Recovery Mechanisms — Graceful failures</li>
+                    </ul>
+                </div>
+                <div class="summary-column">
+                    <h4>Design Principles</h4>
+                    <ul>
+                        <li>Streaming-first — Immediate feedback</li>
+                        <li>Defense in depth — Multiple layers</li>
+                        <li>Fail safely — Preserve state</li>
+                        <li>Extensibility — Skills, plugins, MCP</li>
+                        <li>Observability — Logs, metrics, traces</li>
+                        <li>Type safety — TypeScript + Zod</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="final-note">
+                <p>This harness represents years of iteration on production AI systems.<br>The patterns here are battle-tested with millions of users.</p>
+            </div>
+        </div>
+    </section>
+
+    <style>
+        /* Diagram Styles */
+        .diagram { margin: 2rem 0; }
+
+        .flow-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 2rem;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .flow-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.5rem;
+            background: rgba(0,0,0,0.02);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            min-width: 140px;
+            transition: all 0.3s ease;
+        }
+
+        .flow-step:hover, .flow-step.active {
+            border-color: var(--accent-orange);
+            transform: translateY(-4px);
+        }
+
+        .step-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .step-content h3 { font-size: 1rem; margin-bottom: 0.25rem; }
+        .step-content p { font-size: 0.75rem; color: var(--text-secondary); }
+
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: var(--accent-cyan);
+            font-weight: bold;
+        }
+
+        .flow-arrow.loop { color: var(--accent-orange); }
+
+        /* Code Block */
+        .code-block {
+            margin-top: 2rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .code-block pre {
+            margin: 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .code-block code {
+            color: var(--text-secondary);
+        }
+
+        /* Tools Grid */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .tool-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .tool-card:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-4px);
+        }
+
+        .tool-icon { font-size: 2rem; margin-bottom: 1rem; }
+        .tool-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .tool-card p { font-size: 0.85rem; color: var(--text-secondary); }
+
+        .tool-flow {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        .flow-item {
+            flex: 1;
+            text-align: center;
+            padding: 1rem;
+            background: rgba(232,93,42,0.1);
+            border-radius: 12px;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .flow-item span {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 400;
+            margin-top: 0.25rem;
+        }
+
+        .flow-item:not(:last-child)::after {
+            content: '→';
+            position: absolute;
+            right: -1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent-cyan);
+            font-weight: bold;
+        }
+
+        /* Permissions Grid */
+        .permissions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .permission-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .permission-card:hover { transform: translateY(-4px); }
+        .permission-card.default:hover { border-color: #22c55e; }
+        .permission-card.auto:hover { border-color: var(--accent-orange); }
+        .permission-card.plan:hover { border-color: var(--accent-cyan); }
+        .permission-card.bypass:hover { border-color: var(--accent-purple); }
+
+        .permission-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; }
+
+        .mode-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        .default .mode-badge { background: rgba(34,197,94,0.15); color: #16a34a; }
+        .auto .mode-badge { background: rgba(232,93,42,0.15); color: var(--accent-orange); }
+        .plan .mode-badge { background: rgba(8,145,178,0.15); color: var(--accent-cyan); }
+        .bypass .mode-badge { background: rgba(124,58,237,0.15); color: var(--accent-purple); }
+
+        .permission-card h3 { font-size: 1.2rem; }
+        .permission-card p { color: var(--text-secondary); font-size: 0.9rem; }
+
+        /* Context Layers */
+        .context-layers {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin: 2rem 0;
+        }
+
+        .layer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .layer:hover { transform: translateX(8px); }
+
+        .layer.system-prompt { background: linear-gradient(90deg, rgba(232,93,42,0.12) 0%, transparent 100%); }
+        .layer.user-context { background: linear-gradient(90deg, rgba(8,145,178,0.12) 0%, transparent 100%); }
+        .layer.system-context { background: linear-gradient(90deg, rgba(124,58,237,0.12) 0%, transparent 100%); }
+        .layer.conversation { background: linear-gradient(90deg, rgba(34,197,94,0.12) 0%, transparent 100%); }
+        .layer.tool-results { background: linear-gradient(90deg, rgba(217,119,6,0.12) 0%, transparent 100%); }
+
+        .layer-label { font-weight: 600; }
+        .layer-desc { color: var(--text-secondary); font-size: 0.9rem; }
+
+        .compaction-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .info-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .info-card h4 { color: var(--accent-cyan); margin-bottom: 0.5rem; }
+        .info-card p { color: var(--text-secondary); font-size: 0.9rem; }
+
+        /* Patterns Grid */
+        .patterns-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .pattern-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .pattern-card:hover {
+            border-color: var(--accent-purple);
+            transform: translateY(-4px);
+        }
+
+        .pattern-icon { font-size: 2rem; margin-bottom: 1rem; }
+        .pattern-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .pattern-card p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem; }
+
+        .pattern-card code {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            background: rgba(8,145,178,0.1);
+            padding: 0.5rem 0.75rem;
+            border-radius: 8px;
+        }
+
+        /* Summary Slide */
+        .summary-slide {
+            background:
+                radial-gradient(ellipse at 50% 50%, rgba(124,58,237,0.06) 0%, transparent 50%),
+                var(--bg-dark);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 3rem;
+            margin: 2rem 0;
+        }
+
+        .summary-column h4 {
+            color: var(--accent-orange);
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-column ul {
+            list-style: none;
+        }
+
+        .summary-column li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-secondary);
+        }
+
+        .summary-column li::before {
+            content: '→';
+            color: var(--accent-cyan);
+            margin-right: 0.75rem;
+        }
+
+        .final-note {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: var(--bg-card);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .final-note p {
+            color: var(--text-secondary);
+            font-style: italic;
+            font-family: 'Instrument Serif', serif;
+            font-size: 1.2rem;
+            line-height: 1.8;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .slide { padding: 6rem 2rem 3rem; }
+            h1 { font-size: 3rem; }
+            h2 { font-size: 2rem; }
+            .hero-grid { grid-template-columns: repeat(3, 1fr); }
+            .tools-grid, .permissions-grid, .patterns-grid, .summary-grid { grid-template-columns: 1fr; }
+            .slide-number { font-size: 5rem; right: 2rem; }
+        }
+
+        @media (max-width: 768px) {
+            nav { padding: 0.75rem 1rem; }
+            .nav-links { display: none; }
+            h1 { font-size: 2.5rem; }
+            .hero-grid { grid-template-columns: repeat(2, 1fr); }
+            .flow-container { flex-wrap: wrap; }
+            .tool-flow { flex-direction: column; }
+            .flow-item::after { display: none; }
+        }
+    </style>
+</body>
+</html>
